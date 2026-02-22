@@ -1,0 +1,104 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color: #213547;
+  background-color: #ffffff;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Sunterra brand – override antd-mobile primary across all components */
+  --adm-color-primary: #04A38A;
+  --adm-color-primary-dark: #038a74;
+  --adm-color-primary-light: rgba(4, 163, 138, 0.15);
+}
+
+/* ===== Global antd-mobile brand-color overrides ===== */
+
+/* Radio checked state */
+.adm-radio-checked .adm-radio-icon {
+  border-color: #04A38A !important;
+  background: #04A38A !important;
+}
+
+/* Checkbox checked state */
+.adm-checkbox-checked .adm-checkbox-icon {
+  border-color: #04A38A !important;
+  background: #04A38A !important;
+}
+
+/* Selector active items (global — covers both form & any future usage) */
+.adm-selector .adm-selector-item-active {
+  background: #04A38A !important;
+  color: #fff !important;
+  border-color: #04A38A !important;
+}
+
+.adm-selector .adm-selector-item-active::before {
+  border-color: #04A38A !important;
+}
+
+/* Switch checked state */
+.adm-switch-checked {
+  --background-color: #04A38A;
+}
+
+/* Input / TextArea focus */
+.adm-input-element:focus,
+.adm-text-area-element:focus {
+  caret-color: #04A38A;
+}
+
+/* Button primary */
+.adm-button.adm-button-primary,
+.adm-button-primary {
+  --background-color: #04A38A;
+  --border-color: #04A38A;
+}
+
+/* DatePicker / Picker action button confirm */
+.adm-picker-header-button:last-child,
+.adm-date-picker-header-button:last-child {
+  color: #04A38A !important;
+}
+
+/* Toast success icon */
+.adm-auto-center-content svg {
+  color: #04A38A;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+/* Mobile ≤ 480px: full width */
+@media (max-width: 480px) {
+  body {
+    max-width: 100%;
+  }
+}
+
+/* Tablet 481px–768px */
+@media (min-width: 481px) and (max-width: 768px) {
+  body {
+    max-width: 600px;
+  }
+}
+
+/* Desktop > 768px */
+@media (min-width: 769px) {
+  body {
+    max-width: 800px;
+  }
+}

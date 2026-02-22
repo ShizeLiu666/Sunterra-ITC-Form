@@ -1,0 +1,539 @@
+/* ===== Form Container — GPU-composited scroll layer ===== */
+.form-container {
+  padding: 0 0 24px 0;
+  background: #f5f5f5;
+  min-height: 100vh;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* ===== Header – PDF-style: logo left | title centre | doc-info right ===== */
+.form-header {
+  background: #E8F5F3;
+  padding: 14px 16px;
+  border-bottom: 1px solid #04A38A;
+}
+
+.form-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Logo column */
+.header-logo {
+  flex-shrink: 0;
+}
+
+.header-logo img {
+  width: 120px;
+  display: block;
+}
+
+/* Title column (takes remaining space, centred text) */
+.header-title {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.header-title h1 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 2px;
+  line-height: 1.3;
+  color: #213547;
+}
+
+.form-subtitle {
+  font-size: 11px;
+  color: #555;
+  margin: 0;
+}
+
+/* Doc-info column */
+.header-doc-info {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  font-size: 10px;
+  color: #555;
+  white-space: nowrap;
+}
+
+/* ===== Section Headers ===== */
+.section-header {
+  padding: 16px 16px 8px;
+  margin-top: 8px;
+}
+
+.section-header h2 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  padding: 6px 10px;
+  background: #04A38A;
+  border-radius: 4px;
+}
+
+.section-subtitle {
+  font-size: 12px;
+  color: #888;
+  margin: 6px 0 0;
+}
+
+/* ===== Inspection Items ===== */
+.inspection-item {
+  background: #fff;
+  border-radius: 8px;
+  margin: 8px 12px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  contain: layout style;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 180px;
+}
+
+.inspection-item-label {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.inspection-item-number {
+  font-weight: 700;
+  font-size: 14px;
+  color: #04A38A;
+  flex-shrink: 0;
+}
+
+.inspection-item-text {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #333;
+}
+
+.inspection-row {
+  display: flex;
+  gap: 12px;
+}
+
+.inspection-date {
+  flex: 1;
+}
+
+.inspection-verified {
+  flex: 1;
+}
+
+/* make selectors in inspection items more compact */
+.inspection-item .adm-selector {
+  --padding: 4px 0;
+}
+
+.inspection-item .adm-selector .adm-selector-item {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.inspection-item .adm-form-item {
+  margin-bottom: 0;
+}
+
+.inspection-item .adm-form-item-label {
+  font-size: 12px;
+  color: #888;
+}
+
+/* ===== Additional Test Blocks ===== */
+.additional-test-block {
+  background: #fff;
+  border-radius: 8px;
+  margin: 8px 12px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  contain: layout style;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
+}
+
+.test-block-header {
+  font-size: 14px;
+  font-weight: 700;
+  color: #04A38A;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #eee;
+}
+
+.test-description {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #666;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: #fafafa;
+  border-radius: 6px;
+}
+
+.test-description ol {
+  padding-left: 18px;
+  margin: 6px 0;
+}
+
+.test-description li {
+  margin-bottom: 2px;
+}
+
+.test-description em {
+  display: block;
+  margin-top: 6px;
+  color: #d4380d;
+  font-style: normal;
+  font-weight: 500;
+}
+
+.measurement-row {
+  display: flex;
+  gap: 8px;
+}
+
+.measurement-field {
+  flex: 1;
+}
+
+.additional-test-block .adm-form-item {
+  margin-bottom: 0;
+}
+
+/* ===== Test Results Table ===== */
+.test-results-scroll {
+  margin: 8px 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  will-change: transform;
+  transform: translateZ(0);
+  contain: layout style;
+}
+
+.test-results-table {
+  min-width: 580px;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.test-results-table thead {
+  background: #04A38A;
+  color: #fff;
+}
+
+.test-results-table th {
+  padding: 8px 6px;
+  font-weight: 600;
+  font-size: 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.test-results-table td {
+  padding: 4px 4px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+
+.test-results-table tr:last-child td {
+  border-bottom: none;
+}
+
+.test-results-table .cell-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  padding: 4px 6px;
+}
+
+.test-results-table .adm-input {
+  --font-size: 13px;
+  --text-align: center;
+}
+
+.test-results-table .adm-input-element {
+  padding: 4px 2px;
+}
+
+/* Plain <input> elements used inside the table (no antd-mobile overhead) */
+.test-results-table .plain-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  text-align: center;
+  padding: 6px 4px;
+  font-family: inherit;
+  color: #333;
+}
+
+.test-results-table .plain-input::placeholder {
+  color: #ccc;
+}
+
+.test-results-table .plain-input:focus {
+  background: #f0faf8;
+}
+
+.test-results-table .plain-input[readonly] {
+  color: #999;
+  cursor: default;
+}
+
+/* ===== Equipment Section ===== */
+.equipment-section {
+  background: #fff;
+  border-radius: 8px;
+  margin: 8px 12px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* ===== Defects Section ===== */
+.defects-section {
+  margin: 0 12px;
+}
+
+.defects-section .adm-radio {
+  font-size: 13px;
+}
+
+/* ===== Date Picker Trigger ===== */
+.date-picker-trigger {
+  padding: 4px 0;
+  font-size: 14px;
+  color: #333;
+  min-height: 24px;
+  cursor: pointer;
+}
+
+.date-picker-trigger.placeholder {
+  color: #ccc;
+}
+
+/* ===== General Form Overrides ===== */
+.form-container .adm-form {
+  --border-top: none;
+  --border-bottom: none;
+  --border-inner: none;
+}
+
+.form-container .adm-form-item {
+  padding-left: 0;
+}
+
+.form-container .adm-list-body {
+  border-top: none;
+  border-bottom: none;
+}
+
+.form-container .adm-list-item {
+  padding-left: 16px;
+}
+
+/* ===== Submit / Preview Button ===== */
+.form-container .adm-form-footer {
+  padding: 20px 16px;
+}
+
+.form-container .adm-form-footer .adm-button {
+  background: #04A38A !important;
+  border-color: #04A38A !important;
+  color: #fff !important;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px;
+  border-radius: 8px;
+  height: auto;
+  line-height: 1.4;
+}
+
+.form-container .adm-form-footer .adm-button:active {
+  background: #038A74 !important;
+  border-color: #038A74 !important;
+}
+
+.form-container .adm-form-footer .adm-button::before {
+  border-radius: 8px;
+}
+
+/* ==================================================================
+   Responsive – Tablet (481px – 768px)
+   ================================================================== */
+@media (min-width: 481px) {
+  .form-container {
+    padding: 0 0 32px;
+  }
+
+  .form-header {
+    padding: 18px 24px;
+  }
+
+  .header-title h1 {
+    font-size: 17px;
+  }
+
+  .form-subtitle {
+    font-size: 12px;
+  }
+
+  .header-doc-info {
+    font-size: 11px;
+  }
+
+  .section-header {
+    padding: 18px 20px 10px;
+  }
+
+  .section-header h2 {
+    font-size: 15px;
+  }
+
+  .inspection-item {
+    margin: 10px 16px;
+    padding: 14px;
+  }
+
+  .additional-test-block {
+    margin: 10px 16px;
+    padding: 14px;
+  }
+
+  .test-results-scroll {
+    margin: 10px 16px;
+  }
+
+  .equipment-section {
+    margin: 10px 16px;
+    padding: 14px;
+  }
+
+  .defects-section {
+    margin: 0 16px;
+  }
+
+  .form-container .adm-list-item {
+    padding-left: 20px;
+  }
+
+  .form-container .adm-form-footer {
+    padding: 24px 20px;
+  }
+}
+
+/* ==================================================================
+   Responsive – Desktop (> 768px)
+   ================================================================== */
+@media (min-width: 769px) {
+  .form-container {
+    padding: 0 0 40px;
+  }
+
+  .form-header {
+    padding: 20px 32px;
+  }
+
+  .header-logo img {
+    width: 140px;
+  }
+
+  .header-title h1 {
+    font-size: 20px;
+  }
+
+  .form-subtitle {
+    font-size: 13px;
+  }
+
+  .header-doc-info {
+    font-size: 12px;
+  }
+
+  .section-header {
+    padding: 20px 24px 10px;
+  }
+
+  .section-header h2 {
+    font-size: 16px;
+    padding: 8px 14px;
+  }
+
+  .inspection-item {
+    margin: 10px 24px;
+    padding: 16px 20px;
+  }
+
+  .inspection-item-text {
+    font-size: 14px;
+  }
+
+  .additional-test-block {
+    margin: 10px 24px;
+    padding: 16px 20px;
+  }
+
+  .test-description {
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+
+  .test-results-scroll {
+    margin: 10px 24px;
+    overflow-x: visible;          /* no horizontal scroll on desktop */
+  }
+
+  .test-results-table {
+    min-width: 0;                 /* let table size to container naturally */
+    font-size: 14px;
+  }
+
+  .test-results-table th {
+    padding: 10px 8px;
+    font-size: 13px;
+  }
+
+  .test-results-table td {
+    padding: 6px 6px;
+  }
+
+  .test-results-table .cell-label {
+    font-size: 13px;
+    padding: 6px 8px;
+  }
+
+  .equipment-section {
+    margin: 10px 24px;
+    padding: 16px 20px;
+  }
+
+  .defects-section {
+    margin: 0 24px;
+  }
+
+  .defects-section .adm-radio {
+    font-size: 14px;
+  }
+
+  .form-container .adm-list-item {
+    padding-left: 24px;
+  }
+
+  .form-container .adm-form-footer {
+    padding: 28px 24px;
+  }
+}
