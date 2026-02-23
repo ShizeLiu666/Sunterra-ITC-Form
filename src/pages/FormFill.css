@@ -63,6 +63,50 @@
   white-space: nowrap;
 }
 
+/* ===== Auto-save Toolbar ===== */
+.form-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px;
+  min-height: 34px;
+}
+
+.toolbar-left {
+  min-height: 20px;
+}
+
+.draft-saved-indicator {
+  font-size: 12px;
+  color: #04A38A;
+  font-weight: 500;
+  animation: draft-flash 3s ease-out forwards;
+}
+
+@keyframes draft-flash {
+  0% { opacity: 0; transform: translateY(-4px); }
+  10% { opacity: 1; transform: translateY(0); }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.clear-form-btn {
+  background: none;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: #888;
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+
+.clear-form-btn:active {
+  background: #f0f0f0;
+}
+
 /* ===== Section Headers ===== */
 .section-header {
   padding: 16px 16px 8px;

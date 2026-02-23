@@ -10,6 +10,7 @@ import {
   Radio,
   Space,
   Toast,
+  Dialog,
 } from 'antd-mobile'
 import sunteraLogo from '../assets/Sunterra_Logo.png'
 import {
@@ -305,6 +306,79 @@ const FormFill: React.FC = () => {
     form.setFieldsValue(savedFormValues)
   }, [form, savedFormValues])
 
+  /* ---- Auto-save ---- */
+  const formContainerRef = useRef<HTMLDivElement>(null)
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [draftSave, setDraftSave] = useState<{ time: string; key: number } | null>(null)
+  const saveKeyRef = useRef(0)
+
+  const performAutoSave = useCallback(() => {
+    const formValues = form.getFieldsValue(true)
+    const allValues = { ...formValues, ...testResultsRef.current }
+    localStorage.setItem(STORAGE_KEY, serializeForStorage(allValues))
+    const now = new Date()
+    const ts = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+    saveKeyRef.current += 1
+    setDraftSave({ time: ts, key: saveKeyRef.current })
+  }, [form])
+
+  const triggerAutoSave = useCallback(() => {
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
+    autoSaveTimerRef.current = setTimeout(performAutoSave, 500)
+  }, [performAutoSave])
+
+  useEffect(() => {
+    const el = formContainerRef.current
+    if (!el) return
+    const handler = () => triggerAutoSave()
+    el.addEventListener('input', handler)
+    return () => el.removeEventListener('input', handler)
+  }, [triggerAutoSave])
+
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
+    }
+  }, [])
+
+  const handleClearForm = useCallback(() => {
+    Dialog.confirm({
+      content: 'Clear all form data? This cannot be undone.',
+      confirmText: 'Clear',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        localStorage.removeItem(STORAGE_KEY)
+
+        form.resetFields()
+        form.setFieldsValue(INITIAL_VALUES)
+
+        const freshDefaults = buildTestResultDefaults()
+        testResultsRef.current = { ...freshDefaults }
+
+        document
+          .querySelectorAll<HTMLInputElement>('.test-results-table .plain-input')
+          .forEach((input) => {
+            const row = input.closest('tr')
+            if (!row) { input.value = ''; return }
+            const cells = Array.from(row.querySelectorAll('td'))
+            const cellIndex = cells.indexOf(input.closest('td')!)
+            const rowIndex = Array.from(row.parentElement!.children).indexOf(row)
+            const defKey = `testResult_${rowIndex}_insulation`
+
+            if (cellIndex === 3 && freshDefaults[defKey]) {
+              input.value = freshDefaults[defKey]
+            } else {
+              input.value = ''
+            }
+            input.classList.remove('input-invalid')
+          })
+
+        setDraftSave(null)
+        Toast.show({ content: 'Form cleared', icon: 'success' })
+      },
+    })
+  }, [form])
+
   /* Submit — validate, save, navigate */
   const handleSubmit = useCallback(async () => {
     const formValues = form.getFieldsValue(true)
@@ -346,7 +420,7 @@ const FormFill: React.FC = () => {
   }, [form, navigate])
 
   return (
-    <div className="form-container">
+    <div className="form-container" ref={formContainerRef}>
       {/* ---- Header ---- */}
       <div className="form-header">
         <div className="form-header-row">
@@ -367,10 +441,25 @@ const FormFill: React.FC = () => {
         </div>
       </div>
 
+      {/* ---- Auto-save toolbar ---- */}
+      <div className="form-toolbar">
+        <div className="toolbar-left">
+          {draftSave && (
+            <span key={draftSave.key} className="draft-saved-indicator">
+              Draft saved &#10003; {draftSave.time}
+            </span>
+          )}
+        </div>
+        <button type="button" className="clear-form-btn" onClick={handleClearForm}>
+          Clear Form
+        </button>
+      </div>
+
       <Form
         form={form}
         layout="vertical"
         initialValues={savedFormValues}
+        onValuesChange={triggerAutoSave}
         footer={
           <Button
             block
