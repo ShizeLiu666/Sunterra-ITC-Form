@@ -326,6 +326,32 @@
   color: #ccc;
 }
 
+/* ===== Validation Error Highlight (scroll-to-field) ===== */
+.field-error .adm-list-item {
+  animation: shake 0.4s ease-in-out;
+  border-radius: 8px;
+  transition: box-shadow 0.3s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+/* ===== Input Validation Hints (non-blocking) ===== */
+.input-validation-error .adm-input {
+  box-shadow: inset 0 -2px 0 #ff4d4f;
+  border-radius: 2px;
+}
+
+.test-results-table .plain-input.input-invalid {
+  background: #fff2f0 !important;
+  box-shadow: inset 0 -2px 0 #ff4d4f;
+}
+
 /* ===== General Form Overrides ===== */
 .form-container .adm-form {
   --border-top: none;

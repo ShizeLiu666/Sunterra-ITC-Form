@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Form,
@@ -56,6 +56,11 @@ function buildTestResultDefaults(): Record<string, string> {
 
 const UPPERCASE_STYLE: React.CSSProperties = { textTransform: 'uppercase' }
 const FULL_WIDTH_STYLE: React.CSSProperties = { width: '100%' }
+
+const DIGITS_PATTERN = /^\d+$/
+const DECIMAL_PATTERN = /^\d*\.?\d*$/
+const VOLTAGE_PATTERN = /^(\d*\.?\d*|OL)$/i
+const INSULATION_PATTERN = /^(\d*\.?\d*|N\/A|OL)$/i
 
 /* ================================================================
    Memoised sub-components
@@ -119,13 +124,38 @@ const InspectionItemBlock: React.FC<{
       </div>
       <div className="inspection-verified">
         <Form.Item name={`${prefix}_${index}_verifiedBy`} label="Verified By">
-          <Input placeholder="e.g. JL" />
+          <Input placeholder="Initials" />
         </Form.Item>
       </div>
     </div>
   </div>
 ))
 InspectionItemBlock.displayName = 'InspectionItemBlock'
+
+const ValidatedInput: React.FC<{
+  value?: string
+  onChange?: (val: string) => void
+  placeholder?: string
+  type?: string
+  inputMode?: 'text' | 'tel' | 'decimal' | 'numeric'
+  validPattern: RegExp
+  style?: React.CSSProperties
+}> = React.memo(({ value, onChange, placeholder, type, inputMode, validPattern, style }) => {
+  const invalid = !!value && !validPattern.test(value)
+  return (
+    <div className={invalid ? 'input-validation-error' : undefined}>
+      <Input
+        type={type}
+        inputMode={inputMode}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        style={style}
+      />
+    </div>
+  )
+})
+ValidatedInput.displayName = 'ValidatedInput'
 
 /* ----------------------------------------------------------------
    Test Results table — plain <input> + ref store
@@ -140,12 +170,16 @@ const TestResultRowComp: React.FC<{
   const handleVoltage = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       storeRef.current[`testResult_${index}_voltage`] = e.target.value
+      const v = e.target.value
+      e.target.classList.toggle('input-invalid', !!v && !VOLTAGE_PATTERN.test(v))
     },
     [storeRef, index],
   )
   const handleInsulation = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       storeRef.current[`testResult_${index}_insulation`] = e.target.value
+      const v = e.target.value
+      e.target.classList.toggle('input-invalid', !!v && !INSULATION_PATTERN.test(v))
     },
     [storeRef, index],
   )
@@ -163,6 +197,7 @@ const TestResultRowComp: React.FC<{
       <td>
         <input
           className="plain-input"
+          inputMode="decimal"
           placeholder="V"
           defaultValue={defaults[`testResult_${index}_voltage`] || ''}
           onChange={handleVoltage}
@@ -171,6 +206,7 @@ const TestResultRowComp: React.FC<{
       <td>
         <input
           className="plain-input"
+          inputMode="decimal"
           placeholder="MΩ"
           defaultValue={
             defaults[`testResult_${index}_insulation`] || row.insulationDefault
@@ -265,23 +301,42 @@ const FormFill: React.FC = () => {
 
   const testResultsRef = useRef<Record<string, string>>({ ...testDefaults })
 
+  useEffect(() => {
+    form.setFieldsValue(savedFormValues)
+  }, [form, savedFormValues])
+
   /* Submit — validate, save, navigate */
   const handleSubmit = useCallback(async () => {
     const formValues = form.getFieldsValue(true)
 
-    // Manual validation for required fields
-    const missing: string[] = []
-    if (!formValues.installationAddress?.toString().trim())
-      missing.push('Installation Address')
-    if (!formValues.customerName?.toString().trim())
-      missing.push('Customer Name')
-    if (!formValues.jobNumber?.toString().trim()) missing.push('Job Number')
+    const requiredFields: { name: string; label: string }[] = [
+      { name: 'installationAddress', label: 'Installation Address' },
+      { name: 'customerName', label: 'Customer Name' },
+      { name: 'jobNumber', label: 'Job Number' },
+    ]
 
-    if (missing.length > 0) {
+    const firstMissing = requiredFields.find(
+      (f) => !formValues[f.name]?.toString().trim(),
+    )
+
+    if (firstMissing) {
+      const missing = requiredFields
+        .filter((f) => !formValues[f.name]?.toString().trim())
+        .map((f) => f.label)
+
       Toast.show({
         content: `Please fill in: ${missing.join(', ')}`,
         icon: 'fail',
       })
+
+      const target = document.querySelector<HTMLElement>(
+        `[data-field="${firstMissing.name}"]`,
+      )
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        target.classList.add('field-error')
+        setTimeout(() => target.classList.remove('field-error'), 3000)
+      }
       return
     }
 
@@ -331,27 +386,33 @@ const FormFill: React.FC = () => {
         {/* ===== Section 1 — Project Information ===== */}
         <SectionHeader title="1. Project Information" />
 
-        <Form.Item
-          name="installationAddress"
-          label="Installation Address"
-          rules={[{ required: true, message: 'Installation Address is required' }]}
-        >
-          <Input placeholder="e.g. 5B Lennox RD, Thornlie" />
-        </Form.Item>
-        <Form.Item
-          name="customerName"
-          label="Customer Name"
-          rules={[{ required: true, message: 'Customer Name is required' }]}
-        >
-          <Input placeholder="e.g. Daniel Ward" />
-        </Form.Item>
-        <Form.Item
-          name="jobNumber"
-          label="Job Number"
-          rules={[{ required: true, message: 'Job Number is required' }]}
-        >
-          <Input placeholder="e.g. 25581" />
-        </Form.Item>
+        <div data-field="installationAddress">
+          <Form.Item
+            name="installationAddress"
+            label="Installation Address"
+            rules={[{ required: true, message: 'Installation Address is required' }]}
+          >
+            <Input placeholder="Enter installation address" />
+          </Form.Item>
+        </div>
+        <div data-field="customerName">
+          <Form.Item
+            name="customerName"
+            label="Customer Name"
+            rules={[{ required: true, message: 'Customer Name is required' }]}
+          >
+            <Input placeholder="Enter customer name" />
+          </Form.Item>
+        </div>
+        <div data-field="jobNumber">
+          <Form.Item
+            name="jobNumber"
+            label="Job Number"
+            rules={[{ required: true, message: 'Job Number is required' }]}
+          >
+            <ValidatedInput type="tel" placeholder="Enter job number" validPattern={DIGITS_PATTERN} />
+          </Form.Item>
+        </div>
         <Form.Item name="inverterModel" label="Inverter Model">
           <Input placeholder="e.g. SPH 5000T-HUB" />
         </Form.Item>
@@ -400,13 +461,13 @@ const FormFill: React.FC = () => {
           </div>
           <div className="measurement-row">
             <div className="measurement-field">
-              <Form.Item name="addTest1_ampA" label="A="><Input placeholder="Amps" /></Form.Item>
+              <Form.Item name="addTest1_ampA" label="A="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} /></Form.Item>
             </div>
             <div className="measurement-field">
-              <Form.Item name="addTest1_ampN" label="N="><Input placeholder="Amps" /></Form.Item>
+              <Form.Item name="addTest1_ampN" label="N="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} /></Form.Item>
             </div>
             <div className="measurement-field">
-              <Form.Item name="addTest1_ampNE" label="N-E="><Input placeholder="Amps" /></Form.Item>
+              <Form.Item name="addTest1_ampNE" label="N-E="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} /></Form.Item>
             </div>
           </div>
           <Form.Item name="addTest1_result" label="Result">
@@ -417,7 +478,7 @@ const FormFill: React.FC = () => {
               <Form.Item name="addTest1_date" label="Date"><DatePickerField /></Form.Item>
             </div>
             <div className="inspection-verified">
-              <Form.Item name="addTest1_verifiedBy" label="Verified By"><Input placeholder="e.g. JL" /></Form.Item>
+              <Form.Item name="addTest1_verifiedBy" label="Verified By"><Input placeholder="Initials" /></Form.Item>
             </div>
           </div>
         </div>
@@ -442,13 +503,13 @@ const FormFill: React.FC = () => {
           </div>
           <div className="measurement-row">
             <div className="measurement-field">
-              <Form.Item name="addTest2_ampA" label="A="><Input placeholder="Amps" /></Form.Item>
+              <Form.Item name="addTest2_ampA" label="A="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} /></Form.Item>
             </div>
             <div className="measurement-field">
-              <Form.Item name="addTest2_ampN" label="N="><Input placeholder="Amps" /></Form.Item>
+              <Form.Item name="addTest2_ampN" label="N="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} /></Form.Item>
             </div>
             <div className="measurement-field">
-              <Form.Item name="addTest2_ampNE" label="N-E="><Input placeholder="Amps" /></Form.Item>
+              <Form.Item name="addTest2_ampNE" label="N-E="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} /></Form.Item>
             </div>
           </div>
           <Form.Item name="addTest2_result" label="Result">
@@ -459,7 +520,7 @@ const FormFill: React.FC = () => {
               <Form.Item name="addTest2_date" label="Date"><DatePickerField /></Form.Item>
             </div>
             <div className="inspection-verified">
-              <Form.Item name="addTest2_verifiedBy" label="Verified By"><Input placeholder="e.g. JL" /></Form.Item>
+              <Form.Item name="addTest2_verifiedBy" label="Verified By"><Input placeholder="Initials" /></Form.Item>
             </div>
           </div>
         </div>
@@ -500,10 +561,10 @@ const FormFill: React.FC = () => {
 
         {/* ===== Section 9 — Sign-off ===== */}
         <SectionHeader title="9. Sign-off" />
-        <Form.Item name="signoff_testedBy" label="Tested By"><Input placeholder="e.g. J. Lim" /></Form.Item>
+        <Form.Item name="signoff_testedBy" label="Tested By"><Input placeholder="Enter name" /></Form.Item>
         <Form.Item name="signoff_companyName" label="Company Name"><Input placeholder="Sunterra" /></Form.Item>
-        <Form.Item name="signoff_licenceNo" label="Elec. Licence No."><Input placeholder="e.g. 205567" /></Form.Item>
-        <Form.Item name="signoff_nameCapitals" label="Name (CAPITALS)"><Input placeholder="e.g. JL" style={UPPERCASE_STYLE} /></Form.Item>
+        <Form.Item name="signoff_licenceNo" label="Elec. Licence No."><ValidatedInput type="tel" placeholder="Enter licence number" validPattern={DIGITS_PATTERN} /></Form.Item>
+        <Form.Item name="signoff_nameCapitals" label="Name (CAPITALS)"><Input placeholder="Enter name in capitals" style={UPPERCASE_STYLE} /></Form.Item>
         <Form.Item name="signoff_signature" label="Signature"><Input placeholder="Signature placeholder" /></Form.Item>
         <Form.Item name="signoff_date" label="Date"><DatePickerField /></Form.Item>
       </Form>

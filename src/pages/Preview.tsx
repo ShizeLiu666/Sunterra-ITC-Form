@@ -130,8 +130,10 @@ const Preview: React.FC = () => {
         '_',
       )
       const jobNum = data?.jobNumber?.toString() || 'NoJob'
-      const today = new Date().toISOString().split('T')[0]
-      pdf.save(`ITR_${safeName}_${jobNum}_${today}.pdf`)
+      const now = new Date()
+      const datePart = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
+      const timePart = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`
+      pdf.save(`ITR_${safeName}_${jobNum}_${datePart}_${timePart}.pdf`)
     } finally {
       el.setAttribute('style', originalStyle)
       setPdfLoading(false)
@@ -349,6 +351,16 @@ const Preview: React.FC = () => {
           Sunterra — Inspection and Test Record — SN-ITR-MMI-001 Rev A
         </div>
       </div>
+
+      {/* ---- Full-screen loading overlay ---- */}
+      {pdfLoading && (
+        <div className="pdf-loading-overlay">
+          <div className="pdf-loading-content">
+            <div className="pdf-loading-spinner" />
+            <p>Generating PDF…</p>
+          </div>
+        </div>
+      )}
 
       {/* ---- Sticky bottom action bar (not captured in PDF) ---- */}
       <div className="preview-actions">
