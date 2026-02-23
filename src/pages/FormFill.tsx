@@ -67,18 +67,28 @@ const INSULATION_PATTERN = /^(\d*\.?\d*|N\/A|OL)$/i
    Memoised sub-components
    ================================================================ */
 
+const toDate = (v: unknown): Date | undefined => {
+  if (v instanceof Date) return v
+  if (typeof v === 'string' && v) {
+    const d = new Date(v)
+    if (!isNaN(d.getTime())) return d
+  }
+  return undefined
+}
+
 const DatePickerField: React.FC<{
-  value?: Date
+  value?: Date | string
   onChange?: (val: Date) => void
 }> = React.memo(({ value, onChange }) => {
   const [visible, setVisible] = useState(false)
+  const dateValue = toDate(value)
   return (
     <>
       <div
-        className={`date-picker-trigger${value ? '' : ' placeholder'}`}
+        className={`date-picker-trigger${dateValue ? '' : ' placeholder'}`}
         onClick={() => setVisible(true)}
       >
-        {value ? formatDate(value) : 'Select date'}
+        {dateValue ? formatDate(dateValue) : 'Select date'}
       </div>
       <DatePicker
         visible={visible}
@@ -87,7 +97,7 @@ const DatePickerField: React.FC<{
           onChange?.(val)
           setVisible(false)
         }}
-        value={value}
+        value={dateValue}
       />
     </>
   )
@@ -260,11 +270,68 @@ const TestResultsTable: React.FC<{
 ))
 TestResultsTable.displayName = 'TestResultsTable'
 
+const ApplyToAllRow: React.FC<{
+  prefix: string
+  count: number
+  form: ReturnType<typeof Form.useForm>[0]
+}> = React.memo(({ prefix, count, form }) => {
+  const [date, setDate] = useState<Date | undefined>(undefined)
+  const [verifiedBy, setVerifiedBy] = useState('')
+  const [pickerVisible, setPickerVisible] = useState(false)
+
+  const handleApply = useCallback(() => {
+    const values: Record<string, unknown> = {}
+    for (let i = 0; i < count; i++) {
+      if (date) values[`${prefix}_${i}_date`] = date
+      if (verifiedBy.trim()) values[`${prefix}_${i}_verifiedBy`] = verifiedBy.trim()
+    }
+    if (Object.keys(values).length > 0) {
+      form.setFieldsValue(values)
+      Toast.show({ content: 'Applied to all items', icon: 'success' })
+    }
+  }, [prefix, count, form, date, verifiedBy])
+
+  return (
+    <div className="apply-to-all-row">
+      <div className="apply-to-all-fields">
+        <div className="apply-to-all-date">
+          <label>Date</label>
+          <div
+            className={`date-picker-trigger${date ? '' : ' placeholder'}`}
+            onClick={() => setPickerVisible(true)}
+          >
+            {date ? formatDate(date) : 'Select date'}
+          </div>
+          <DatePicker
+            visible={pickerVisible}
+            onClose={() => setPickerVisible(false)}
+            onConfirm={(val) => { setDate(val); setPickerVisible(false) }}
+            value={date}
+          />
+        </div>
+        <div className="apply-to-all-verified">
+          <label>Verified By</label>
+          <Input placeholder="Initials" value={verifiedBy} onChange={setVerifiedBy} />
+        </div>
+      </div>
+      <Button
+        size="small"
+        className="apply-to-all-btn"
+        onClick={handleApply}
+        disabled={!date && !verifiedBy.trim()}
+      >
+        Apply to All
+      </Button>
+    </div>
+  )
+})
+ApplyToAllRow.displayName = 'ApplyToAllRow'
+
 /* ================================================================
    Main Form Component
    ================================================================ */
 
-const FormFill: React.FC = () => {
+const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
   const navigate = useNavigate()
   const [form] = Form.useForm()
 
@@ -303,6 +370,8 @@ const FormFill: React.FC = () => {
   const testResultsRef = useRef<Record<string, string>>({ ...testDefaults })
 
   useEffect(() => {
+    console.log('[FormFill] MOUNTED — savedFormValues:', JSON.stringify(savedFormValues).slice(0, 200))
+    console.log('[FormFill] React version:', React.version)
     form.setFieldsValue(savedFormValues)
   }, [form, savedFormValues])
 
@@ -342,42 +411,20 @@ const FormFill: React.FC = () => {
   }, [])
 
   const handleClearForm = useCallback(() => {
+    console.log('[ClearForm] Dialog opening')
     Dialog.confirm({
       content: 'Clear all form data? This cannot be undone.',
       confirmText: 'Clear',
       cancelText: 'Cancel',
       onConfirm: () => {
-        localStorage.removeItem(STORAGE_KEY)
-
-        form.resetFields()
-        form.setFieldsValue(INITIAL_VALUES)
-
-        const freshDefaults = buildTestResultDefaults()
-        testResultsRef.current = { ...freshDefaults }
-
-        document
-          .querySelectorAll<HTMLInputElement>('.test-results-table .plain-input')
-          .forEach((input) => {
-            const row = input.closest('tr')
-            if (!row) { input.value = ''; return }
-            const cells = Array.from(row.querySelectorAll('td'))
-            const cellIndex = cells.indexOf(input.closest('td')!)
-            const rowIndex = Array.from(row.parentElement!.children).indexOf(row)
-            const defKey = `testResult_${rowIndex}_insulation`
-
-            if (cellIndex === 3 && freshDefaults[defKey]) {
-              input.value = freshDefaults[defKey]
-            } else {
-              input.value = ''
-            }
-            input.classList.remove('input-invalid')
-          })
-
-        setDraftSave(null)
+        console.log('[ClearForm] Confirmed — calling onClearForm (localStorage clear + key increment)')
+        console.log('[ClearForm] localStorage BEFORE:', localStorage.getItem(STORAGE_KEY) ? 'has data' : 'empty')
+        onClearForm()
+        console.log('[ClearForm] localStorage AFTER:', localStorage.getItem(STORAGE_KEY) ? 'has data' : 'empty')
         Toast.show({ content: 'Form cleared', icon: 'success' })
       },
     })
-  }, [form])
+  }, [onClearForm])
 
   /* Submit — validate, save, navigate */
   const handleSubmit = useCallback(async () => {
@@ -517,12 +564,14 @@ const FormFill: React.FC = () => {
 
         {/* ===== Section 2 — Visual Inspection ===== */}
         <SectionHeader title="2. Visual Inspection" />
+        <ApplyToAllRow prefix="visual" count={VISUAL_INSPECTION_ITEMS.length} form={form} />
         {VISUAL_INSPECTION_ITEMS.map((item, idx) => (
           <InspectionItemBlock key={`vi_${idx}`} prefix="visual" index={idx} label={item} />
         ))}
 
         {/* ===== Section 3 — Inspection and Test ===== */}
         <SectionHeader title="3. Inspection and Test" />
+        <ApplyToAllRow prefix="inspect" count={INSPECTION_TEST_ITEMS.length} form={form} />
         {INSPECTION_TEST_ITEMS.map((item, idx) => (
           <InspectionItemBlock key={`it_${idx}`} prefix="inspect" index={idx} label={item} />
         ))}
@@ -661,4 +710,19 @@ const FormFill: React.FC = () => {
   )
 }
 
-export default FormFill
+const FormFillWrapper: React.FC = () => {
+  const [formKey, setFormKey] = useState(0)
+  console.log('[FormFillWrapper] render — formKey:', formKey)
+  return (
+    <FormFill
+      key={formKey}
+      onClearForm={() => {
+        console.log('[FormFillWrapper] onClearForm — removing localStorage, incrementing key from', formKey)
+        localStorage.removeItem(STORAGE_KEY)
+        setFormKey((k) => k + 1)
+      }}
+    />
+  )
+}
+
+export default FormFillWrapper

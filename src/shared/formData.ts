@@ -62,11 +62,15 @@ export function serializeForStorage(data: Record<string, any>): string {
   })
 }
 
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function deserializeFromStorage(json: string): Record<string, any> {
   return JSON.parse(json, (_key, value) => {
-    if (typeof value === 'string' && value.startsWith('__DATE__'))
-      return new Date(value.slice(8))
+    if (typeof value === 'string') {
+      if (value.startsWith('__DATE__')) return new Date(value.slice(8))
+      if (ISO_DATE_RE.test(value)) return new Date(value)
+    }
     return value
   })
 }
@@ -75,10 +79,12 @@ export function deserializeFromStorage(json: string): Record<string, any> {
    Date formatting
    ================================================================ */
 
-export const formatDate = (date: Date): string => {
-  const d = date.getDate().toString().padStart(2, '0')
-  const m = (date.getMonth() + 1).toString().padStart(2, '0')
-  const y = date.getFullYear()
-  return `${d}/${m}/${y}`
+export const formatDate = (date: Date | string): string => {
+  const d = date instanceof Date ? date : new Date(date)
+  if (isNaN(d.getTime())) return String(date)
+  const day = d.getDate().toString().padStart(2, '0')
+  const m = (d.getMonth() + 1).toString().padStart(2, '0')
+  const y = d.getFullYear()
+  return `${day}/${m}/${y}`
 }
 

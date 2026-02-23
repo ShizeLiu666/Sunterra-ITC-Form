@@ -53,7 +53,7 @@
   background: #038a74;
 }
 
-/* Secondary — outline Sunterra teal */
+/* Secondary — outline Sunterra teal (Back to Edit) */
 .pv-btn-secondary {
   background: #fff;
   color: #04A38A;
@@ -61,6 +61,19 @@
 }
 
 .pv-btn-secondary:hover:not(:disabled) {
+  background: #E8F5F3;
+}
+
+/* Outline — compact secondary for mobile PDF button */
+.pv-btn-outline {
+  background: #fff;
+  color: #04A38A;
+  border: 1.5px solid #04A38A;
+  flex: 0 0 auto;
+  padding: 12px 14px;
+}
+
+.pv-btn-outline:hover:not(:disabled) {
   background: #E8F5F3;
 }
 

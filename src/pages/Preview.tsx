@@ -62,10 +62,17 @@ function energyStr(val: unknown): string {
    Preview Component
    ================================================================ */
 
+const isMobile = (): boolean =>
+  /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 768
+
+const isIOS = (): boolean => /iPhone|iPad|iPod/i.test(navigator.userAgent)
+
 const Preview: React.FC = () => {
   const navigate = useNavigate()
   const previewRef = useRef<HTMLDivElement>(null)
   const [pdfLoading, setPdfLoading] = useState(false)
+  const [imageLoading, setImageLoading] = useState(false)
+  const [mobile] = useState(isMobile)
 
   // Load form data from localStorage
   const [data] = useState<Data | null>(() => {
@@ -137,6 +144,63 @@ const Preview: React.FC = () => {
     } finally {
       el.setAttribute('style', originalStyle)
       setPdfLoading(false)
+    }
+  }
+
+  /* ---- Image generation ---- */
+  const handleSaveAsImage = async () => {
+    const el = previewRef.current
+    if (!el) return
+
+    setImageLoading(true)
+
+    const originalStyle = el.getAttribute('style') || ''
+    el.style.width = '794px'
+    el.style.maxWidth = '794px'
+
+    try {
+      await new Promise((r) => setTimeout(r, 200))
+
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      })
+
+      const safeName = (data?.customerName?.toString() || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_')
+      const jobNum = data?.jobNumber?.toString() || 'NoJob'
+      const now = new Date()
+      const datePart = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
+      const timePart = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`
+      const filename = `ITR_${safeName}_${jobNum}_${datePart}_${timePart}.png`
+
+      if (isIOS()) {
+        const dataUrl = canvas.toDataURL('image/png')
+        const newTab = window.open()
+        if (newTab) {
+          newTab.document.write(
+            `<html><head><title>${filename}</title><meta name="viewport" content="width=device-width,initial-scale=1"></head>` +
+            `<body style="margin:0;display:flex;justify-content:center;background:#e8e8e8">` +
+            `<img src="${dataUrl}" style="width:100%;max-width:800px" /></body></html>`
+          )
+          newTab.document.close()
+        }
+      } else {
+        canvas.toBlob((blob) => {
+          if (!blob) return
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = filename
+          a.click()
+          URL.revokeObjectURL(url)
+        }, 'image/png')
+      }
+    } finally {
+      el.setAttribute('style', originalStyle)
+      setImageLoading(false)
     }
   }
 
@@ -353,11 +417,11 @@ const Preview: React.FC = () => {
       </div>
 
       {/* ---- Full-screen loading overlay ---- */}
-      {pdfLoading && (
+      {(pdfLoading || imageLoading) && (
         <div className="pdf-loading-overlay">
           <div className="pdf-loading-content">
             <div className="pdf-loading-spinner" />
-            <p>Generating PDF…</p>
+            <p>{imageLoading ? 'Generating Image…' : 'Generating PDF…'}</p>
           </div>
         </div>
       )}
@@ -367,13 +431,32 @@ const Preview: React.FC = () => {
         <button className="pv-btn pv-btn-secondary" onClick={() => navigate('/')}>
           ← Back to Edit
         </button>
-        <button
-          className="pv-btn pv-btn-primary"
-          onClick={handleDownloadPdf}
-          disabled={pdfLoading}
-        >
-          {pdfLoading ? 'Generating…' : '↓ Download PDF'}
-        </button>
+        {mobile ? (
+          <>
+            <button
+              className="pv-btn pv-btn-primary"
+              onClick={handleSaveAsImage}
+              disabled={imageLoading || pdfLoading}
+            >
+              {imageLoading ? 'Generating…' : '📷 Save as Image'}
+            </button>
+            <button
+              className="pv-btn pv-btn-outline"
+              onClick={handleDownloadPdf}
+              disabled={pdfLoading || imageLoading}
+            >
+              {pdfLoading ? 'Generating…' : '↓ PDF'}
+            </button>
+          </>
+        ) : (
+          <button
+            className="pv-btn pv-btn-primary"
+            onClick={handleDownloadPdf}
+            disabled={pdfLoading}
+          >
+            {pdfLoading ? 'Generating…' : '↓ Download PDF'}
+          </button>
+        )}
       </div>
     </div>
   )
