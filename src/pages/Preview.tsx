@@ -67,6 +67,20 @@ const isMobile = (): boolean =>
 
 const isIOS = (): boolean => /iPhone|iPad|iPod/i.test(navigator.userAgent)
 
+/**
+ * iOS Safari caps a single canvas at ~15MP (width × height ≤ 16,777,216 px).
+ * At scale=2 with a 794px-wide element, the form only needs to be ~5,300px tall
+ * before the canvas exceeds the limit, producing a blank or corrupt image.
+ * This function returns the highest integer scale (1–2) that stays within budget.
+ */
+function safeCaptureScale(elementHeight: number, captureWidth = 794): number {
+  if (!isIOS()) return 2
+  const MAX_PIXELS = 15_000_000
+  const maxScale = Math.sqrt(MAX_PIXELS / (captureWidth * elementHeight))
+  // Round down to nearest 0.5 step, minimum 1
+  return Math.max(1, Math.floor(maxScale * 2) / 2)
+}
+
 const Preview: React.FC = () => {
   const navigate = useNavigate()
   const previewRef = useRef<HTMLDivElement>(null)
@@ -105,8 +119,9 @@ const Preview: React.FC = () => {
       // Small delay to let browser reflow
       await new Promise((r) => setTimeout(r, 200))
 
+      const scale = safeCaptureScale(el.scrollHeight)
       const canvas = await html2canvas(el, {
-        scale: 2,
+        scale,
         useCORS: true,
         allowTaint: true,
         logging: false,
@@ -161,8 +176,9 @@ const Preview: React.FC = () => {
     try {
       await new Promise((r) => setTimeout(r, 200))
 
+      const scale = safeCaptureScale(el.scrollHeight)
       const canvas = await html2canvas(el, {
-        scale: 2,
+        scale,
         useCORS: true,
         allowTaint: true,
         logging: false,
@@ -405,7 +421,19 @@ const Preview: React.FC = () => {
             <InfoRow label="Company Name" value={str(data.signoff_companyName)} />
             <InfoRow label="Elec. Licence No." value={str(data.signoff_licenceNo)} />
             <InfoRow label="Name (CAPITALS)" value={str(data.signoff_nameCapitals)} />
-            <InfoRow label="Signature" value={str(data.signoff_signature)} />
+            <div className="pv-info-item full-width">
+              <span className="pv-label">Signature</span>
+              {data.signoff_signature && typeof data.signoff_signature === 'string' && data.signoff_signature.startsWith('data:image') ? (
+                <img
+                  src={data.signoff_signature}
+                  alt="Signature"
+                  className="pv-signature-img"
+                  crossOrigin="anonymous"
+                />
+              ) : (
+                <span className="pv-value">{str(data.signoff_signature)}</span>
+              )}
+            </div>
             <InfoRow label="Date" value={dateStr(data.signoff_date)} />
           </div>
         </div>

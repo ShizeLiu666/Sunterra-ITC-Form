@@ -1,6 +1,11 @@
 /* ===== Network Status Overlays ===== */
 .network-overlay {
   position: fixed;
+  /* Explicit TRBL fallback for iOS Safari < 14.1 which doesn't support 'inset' */
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   inset: 0;
   z-index: 10000;
   display: flex;

@@ -13,6 +13,8 @@ import {
   Dialog,
 } from 'antd-mobile'
 import sunteraLogo from '../assets/Sunterra_Logo.png'
+import SignaturePad from '../components/SignaturePad'
+import type { SignaturePadHandle } from '../components/SignaturePad'
 import {
   STORAGE_KEY,
   VISUAL_INSPECTION_ITEMS,
@@ -150,8 +152,9 @@ const ValidatedInput: React.FC<{
   type?: string
   inputMode?: 'text' | 'tel' | 'decimal' | 'numeric'
   validPattern: RegExp
+  hint?: string
   style?: React.CSSProperties
-}> = React.memo(({ value, onChange, placeholder, type, inputMode, validPattern, style }) => {
+}> = React.memo(({ value, onChange, placeholder, type, inputMode, validPattern, hint, style }) => {
   const invalid = !!value && !validPattern.test(value)
   return (
     <div className={invalid ? 'input-validation-error' : undefined}>
@@ -163,6 +166,7 @@ const ValidatedInput: React.FC<{
         onChange={onChange}
         style={style}
       />
+      {invalid && hint && <p className="validation-hint">{hint}</p>}
     </div>
   )
 })
@@ -178,11 +182,16 @@ const TestResultRowComp: React.FC<{
   storeRef: React.MutableRefObject<Record<string, string>>
   defaults: Record<string, string>
 }> = React.memo(({ row, index, storeRef, defaults }) => {
+  const [voltageInvalid, setVoltageInvalid] = useState(false)
+  const [insulationInvalid, setInsulationInvalid] = useState(false)
+
   const handleVoltage = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       storeRef.current[`testResult_${index}_voltage`] = e.target.value
       const v = e.target.value
-      e.target.classList.toggle('input-invalid', !!v && !VOLTAGE_PATTERN.test(v))
+      const bad = !!v && !VOLTAGE_PATTERN.test(v)
+      e.target.classList.toggle('input-invalid', bad)
+      setVoltageInvalid(bad)
     },
     [storeRef, index],
   )
@@ -190,7 +199,9 @@ const TestResultRowComp: React.FC<{
     (e: React.ChangeEvent<HTMLInputElement>) => {
       storeRef.current[`testResult_${index}_insulation`] = e.target.value
       const v = e.target.value
-      e.target.classList.toggle('input-invalid', !!v && !INSULATION_PATTERN.test(v))
+      const bad = !!v && !INSULATION_PATTERN.test(v)
+      e.target.classList.toggle('input-invalid', bad)
+      setInsulationInvalid(bad)
     },
     [storeRef, index],
   )
@@ -206,25 +217,35 @@ const TestResultRowComp: React.FC<{
       <td className="cell-label">{row.from}</td>
       <td className="cell-label">{row.to}</td>
       <td>
-        <input
-          className="plain-input"
-          inputMode="decimal"
-          placeholder="V"
-          defaultValue={defaults[`testResult_${index}_voltage`] || ''}
-          onChange={handleVoltage}
-        />
+        <div className="table-input-cell">
+          <input
+            className="plain-input"
+            inputMode="decimal"
+            placeholder="V"
+            defaultValue={defaults[`testResult_${index}_voltage`] || ''}
+            onChange={handleVoltage}
+          />
+          {voltageInvalid && (
+            <span className="validation-hint">Number or OL (e.g. 243.8)</span>
+          )}
+        </div>
       </td>
       <td>
-        <input
-          className="plain-input"
-          inputMode="decimal"
-          placeholder="MΩ"
-          defaultValue={
-            defaults[`testResult_${index}_insulation`] || row.insulationDefault
-          }
-          readOnly={!!row.insulationDefault}
-          onChange={handleInsulation}
-        />
+        <div className="table-input-cell">
+          <input
+            className="plain-input"
+            inputMode="decimal"
+            placeholder="MΩ"
+            defaultValue={
+              defaults[`testResult_${index}_insulation`] || row.insulationDefault
+            }
+            readOnly={!!row.insulationDefault}
+            onChange={handleInsulation}
+          />
+          {insulationInvalid && (
+            <span className="validation-hint">Number, N/A, or OL (e.g. 500)</span>
+          )}
+        </div>
       </td>
       <td>
         <input
@@ -369,6 +390,20 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
 
   const testResultsRef = useRef<Record<string, string>>({ ...testDefaults })
 
+  /* Signature — stored as a plain base64 string, not in the antd-mobile Form */
+  const signaturePadRef = useRef<SignaturePadHandle>(null)
+  const [initialSignature] = useState<string>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (raw) {
+        const saved = deserializeFromStorage(raw)
+        return typeof saved.signoff_signature === 'string' ? saved.signoff_signature : ''
+      }
+    } catch { /* ignore */ }
+    return ''
+  })
+  const signatureValueRef = useRef<string>(initialSignature)
+
   useEffect(() => {
     console.log('[FormFill] MOUNTED — savedFormValues:', JSON.stringify(savedFormValues).slice(0, 200))
     console.log('[FormFill] React version:', React.version)
@@ -383,7 +418,11 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
 
   const performAutoSave = useCallback(() => {
     const formValues = form.getFieldsValue(true)
-    const allValues = { ...formValues, ...testResultsRef.current }
+    const allValues = {
+      ...formValues,
+      ...testResultsRef.current,
+      signoff_signature: signaturePadRef.current?.getValue() ?? signatureValueRef.current,
+    }
     localStorage.setItem(STORAGE_KEY, serializeForStorage(allValues))
     const now = new Date()
     const ts = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
@@ -461,7 +500,11 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
       return
     }
 
-    const allValues = { ...formValues, ...testResultsRef.current }
+    const allValues = {
+      ...formValues,
+      ...testResultsRef.current,
+      signoff_signature: signaturePadRef.current?.getValue() ?? signatureValueRef.current,
+    }
     localStorage.setItem(STORAGE_KEY, serializeForStorage(allValues))
     navigate('/preview')
   }, [form, navigate])
@@ -546,7 +589,7 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
             label="Job Number"
             rules={[{ required: true, message: 'Job Number is required' }]}
           >
-            <ValidatedInput type="tel" placeholder="Enter job number" validPattern={DIGITS_PATTERN} />
+            <ValidatedInput type="tel" placeholder="Enter job number" validPattern={DIGITS_PATTERN} hint="Numbers only (e.g. 25581)" />
           </Form.Item>
         </div>
         <Form.Item name="inverterModel" label="Inverter Model">
@@ -599,13 +642,13 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
           </div>
           <div className="measurement-row">
             <div className="measurement-field">
-              <Form.Item name="addTest1_ampA" label="A="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} /></Form.Item>
+              <Form.Item name="addTest1_ampA" label="A="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} hint="Enter a number (e.g. 12.5)" /></Form.Item>
             </div>
             <div className="measurement-field">
-              <Form.Item name="addTest1_ampN" label="N="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} /></Form.Item>
+              <Form.Item name="addTest1_ampN" label="N="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} hint="Enter a number (e.g. 12.5)" /></Form.Item>
             </div>
             <div className="measurement-field">
-              <Form.Item name="addTest1_ampNE" label="N-E="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} /></Form.Item>
+              <Form.Item name="addTest1_ampNE" label="N-E="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} hint="Enter a number (e.g. 12.5)" /></Form.Item>
             </div>
           </div>
           <Form.Item name="addTest1_result" label="Result">
@@ -641,13 +684,13 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
           </div>
           <div className="measurement-row">
             <div className="measurement-field">
-              <Form.Item name="addTest2_ampA" label="A="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} /></Form.Item>
+              <Form.Item name="addTest2_ampA" label="A="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} hint="Enter a number (e.g. 12.5)" /></Form.Item>
             </div>
             <div className="measurement-field">
-              <Form.Item name="addTest2_ampN" label="N="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} /></Form.Item>
+              <Form.Item name="addTest2_ampN" label="N="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} hint="Enter a number (e.g. 12.5)" /></Form.Item>
             </div>
             <div className="measurement-field">
-              <Form.Item name="addTest2_ampNE" label="N-E="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} /></Form.Item>
+              <Form.Item name="addTest2_ampNE" label="N-E="><ValidatedInput inputMode="decimal" placeholder="Amps" validPattern={DECIMAL_PATTERN} hint="Enter a number (e.g. 12.5)" /></Form.Item>
             </div>
           </div>
           <Form.Item name="addTest2_result" label="Result">
@@ -701,9 +744,15 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
         <SectionHeader title="9. Sign-off" />
         <Form.Item name="signoff_testedBy" label="Tested By"><Input placeholder="Enter name" /></Form.Item>
         <Form.Item name="signoff_companyName" label="Company Name"><Input placeholder="Sunterra" /></Form.Item>
-        <Form.Item name="signoff_licenceNo" label="Elec. Licence No."><ValidatedInput type="tel" placeholder="Enter licence number" validPattern={DIGITS_PATTERN} /></Form.Item>
+        <Form.Item name="signoff_licenceNo" label="Elec. Licence No."><ValidatedInput type="tel" placeholder="Enter licence number" validPattern={DIGITS_PATTERN} hint="Numbers only (e.g. 205567)" /></Form.Item>
         <Form.Item name="signoff_nameCapitals" label="Name (CAPITALS)"><Input placeholder="Enter name in capitals" style={UPPERCASE_STYLE} /></Form.Item>
-        <Form.Item name="signoff_signature" label="Signature"><Input placeholder="Signature placeholder" /></Form.Item>
+        <Form.Item label="Signature">
+          <SignaturePad
+            ref={signaturePadRef}
+            initialValue={initialSignature}
+            onChange={(dataUrl) => { signatureValueRef.current = dataUrl; triggerAutoSave() }}
+          />
+        </Form.Item>
         <Form.Item name="signoff_date" label="Date"><DatePickerField /></Form.Item>
       </Form>
     </div>

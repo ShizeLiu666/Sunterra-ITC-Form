@@ -82,6 +82,32 @@ body {
   min-height: 100vh;
 }
 
+/* ===== Mobile browser compatibility ===== */
+
+/* Remove 300ms tap delay on buttons and interactive elements on iOS/Android */
+button,
+a,
+[role="button"],
+.adm-button,
+.adm-selector-item,
+.adm-radio,
+.date-picker-trigger,
+.apply-to-all-btn,
+.clear-form-btn,
+.pv-btn {
+  touch-action: manipulation;
+}
+
+/* Prevent iOS Safari auto-zoom on input focus.
+   iOS ignores maximum-scale=1 on some versions; 16px is the only reliable fix.
+   antd-mobile default Input uses --adm-font-size-5 (15px), which can still trigger zoom. */
+@media (max-width: 768px) {
+  .adm-input-element,
+  .adm-text-area-element {
+    font-size: 16px !important;
+  }
+}
+
 /* Mobile ≤ 480px: full width */
 @media (max-width: 480px) {
   body {

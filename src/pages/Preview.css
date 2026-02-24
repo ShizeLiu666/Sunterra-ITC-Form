@@ -6,6 +6,7 @@
 
 /* ===== Sticky Bottom Action Bar (not captured in PDF) ===== */
 .preview-actions {
+  position: -webkit-sticky; /* Safari < 13 */
   position: sticky;
   bottom: 0;
   z-index: 100;
@@ -331,6 +332,17 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px 16px;
+}
+
+.pv-signature-img {
+  display: block;
+  max-width: 200px;
+  max-height: 80px;
+  object-fit: contain;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  background: #fff;
+  margin-top: 2px;
 }
 
 /* ===== Footer ===== */
