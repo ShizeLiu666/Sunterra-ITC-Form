@@ -31,11 +31,17 @@
   background: #04A38A !important;
 }
 
-/* Selector active items (global — covers both form & any future usage) */
+/* Selector — formal styling (global) */
+.adm-selector .adm-selector-item {
+  border-radius: 4px !important;
+  border: 1px solid #C8C8C8 !important;
+}
+
 .adm-selector .adm-selector-item-active {
   background: #04A38A !important;
   color: #fff !important;
   border-color: #04A38A !important;
+  border-radius: 4px !important;
 }
 
 .adm-selector .adm-selector-item-active::before {
@@ -47,7 +53,13 @@
   --background-color: #04A38A;
 }
 
-/* Input / TextArea focus */
+/* Input / TextArea — formal styling */
+.adm-input-wrapper,
+.adm-text-area {
+  border-radius: 4px !important;
+  border: 1px solid #C8C8C8 !important;
+}
+
 .adm-input-element:focus,
 .adm-text-area-element:focus {
   caret-color: #04A38A;

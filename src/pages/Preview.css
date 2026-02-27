@@ -11,9 +11,10 @@
   bottom: 0;
   z-index: 100;
   display: flex;
-  gap: 12px;
-  padding: 14px 16px;
-  padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  flex-wrap: nowrap;
+  gap: 8px;
+  padding: 10px 12px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   background: #fff;
   border-top: 1px solid #e0e0e0;
   box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.08);
@@ -25,14 +26,15 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 15px;
+  padding: 8px 4px;
+  border-radius: 6px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   border: none;
   transition: background 0.2s, opacity 0.2s;
   -webkit-tap-highlight-color: transparent;
+  min-width: 0;
 }
 
 .pv-btn:active {
@@ -54,27 +56,34 @@
   background: #038a74;
 }
 
+/* Save as Image — solid #04A38A */
+.pv-btn-image {
+  background: #04A38A;
+  color: #fff;
+}
+
+.pv-btn-image:hover:not(:disabled) {
+  background: #038a74;
+}
+
+/* Download PDF — slightly darker shade to differentiate */
+.pv-btn-pdf {
+  background: #038a74;
+  color: #fff;
+}
+
+.pv-btn-pdf:hover:not(:disabled) {
+  background: #027a66;
+}
+
 /* Secondary — outline Sunterra teal (Back to Edit) */
 .pv-btn-secondary {
   background: #fff;
   color: #04A38A;
-  border: 1.5px solid #04A38A;
+  border: 1px solid #04A38A;
 }
 
 .pv-btn-secondary:hover:not(:disabled) {
-  background: #E8F5F3;
-}
-
-/* Outline — compact secondary for mobile PDF button */
-.pv-btn-outline {
-  background: #fff;
-  color: #04A38A;
-  border: 1.5px solid #04A38A;
-  flex: 0 0 auto;
-  padding: 12px 14px;
-}
-
-.pv-btn-outline:hover:not(:disabled) {
   background: #E8F5F3;
 }
 
@@ -372,8 +381,15 @@
   }
 
   .pv-btn {
-    padding: 11px 12px;
-    font-size: 14px;
+    padding: 8px 4px;
+    font-size: 13px;
+  }
+
+  /* Slightly larger font when screen > 400px */
+  @media (min-width: 401px) {
+    .pv-btn {
+      font-size: 14px;
+    }
   }
 
   .pv-header {
@@ -432,6 +448,10 @@
     max-width: 600px;
     margin: 0 auto;
   }
+
+  .pv-btn {
+    font-size: 14px;
+  }
 }
 
 /* ==================================================================
@@ -445,6 +465,7 @@
     border-radius: 0 0 4px 4px;
   }
 
+  /* Desktop: 2 buttons only, no change to current behavior */
   .pv-btn {
     padding: 14px 20px;
     font-size: 16px;

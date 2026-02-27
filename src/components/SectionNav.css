@@ -1,0 +1,130 @@
+.section-nav-btn {
+  position: fixed;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #04A38A;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.85;
+  box-shadow: 0 2px 12px rgba(4, 163, 138, 0.4);
+  z-index: 999;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.section-nav-btn:hover {
+  opacity: 1;
+}
+
+.section-nav-btn:active {
+  transform: scale(0.96);
+}
+
+.section-nav-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.section-nav-progress {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  background: #fff;
+  color: #04A38A;
+  border-radius: 9px;
+  border: 1.5px solid #04A38A;
+}
+
+.section-nav-backdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 1000;
+}
+
+.section-nav-popup {
+  position: fixed;
+  bottom: calc(55px + 44px + env(safe-area-inset-bottom, 0px));
+  right: 16px;
+  width: min(280px, calc(100vw - 32px));
+  max-height: 70vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 1001;
+  padding: 12px 0;
+}
+
+.section-nav-popup-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 16px 8px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 4px;
+}
+
+.section-nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.section-nav-list li {
+  margin: 0;
+}
+
+.section-nav-item {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  font-size: 14px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: #333;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.section-nav-item:hover {
+  background: #f5f5f5;
+}
+
+.section-nav-item.section-nav-active {
+  color: #04A38A;
+  font-weight: 700;
+  background: #E8F5F3;
+}
+
+@media (min-width: 769px) {
+  .section-nav-btn {
+    right: 24px;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .section-nav-popup {
+    right: 24px;
+    bottom: calc(24px + 44px + 12px + env(safe-area-inset-bottom, 0px));
+  }
+}

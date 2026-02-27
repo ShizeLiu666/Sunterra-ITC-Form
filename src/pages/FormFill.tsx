@@ -15,6 +15,7 @@ import {
 import sunteraLogo from '../assets/Sunterra_Logo.png'
 import SignaturePad from '../components/SignaturePad'
 import type { SignaturePadHandle } from '../components/SignaturePad'
+import SectionNav from '../components/SectionNav'
 import {
   STORAGE_KEY,
   VISUAL_INSPECTION_ITEMS,
@@ -106,14 +107,19 @@ const DatePickerField: React.FC<{
 })
 DatePickerField.displayName = 'DatePickerField'
 
-const SectionHeader: React.FC<{ title: string; subtitle?: string }> = React.memo(
-  ({ title, subtitle }) => (
-    <div className="section-header">
+const SectionHeader: React.FC<{
+  title: string
+  subtitle?: string
+  badge?: React.ReactNode
+}> = React.memo(({ title, subtitle, badge }) => (
+  <div className="section-header">
+    <div className="section-header-row">
       <h2>{title}</h2>
-      {subtitle && <p className="section-subtitle">{subtitle}</p>}
+      {badge}
     </div>
-  ),
-)
+    {subtitle && <p className="section-subtitle">{subtitle}</p>}
+  </div>
+))
 SectionHeader.displayName = 'SectionHeader'
 
 const InspectionItemBlock: React.FC<{
@@ -184,6 +190,19 @@ const TestResultRowComp: React.FC<{
 }> = React.memo(({ row, index, storeRef, defaults }) => {
   const [voltageInvalid, setVoltageInvalid] = useState(false)
   const [insulationInvalid, setInsulationInvalid] = useState(false)
+  const [insulationLowWarning, setInsulationLowWarning] = useState(false)
+  const insulationInputRef = useRef<HTMLInputElement>(null)
+
+  /* Apply low warning on mount if saved value is ≤1 */
+  useEffect(() => {
+    if (row.insulationDefault) return
+    const v = (defaults[`testResult_${index}_insulation`] ?? '').toString().trim()
+    const num = parseFloat(v)
+    if (v && v.toUpperCase() !== 'OL' && v.toUpperCase() !== 'N/A' && !isNaN(num) && num <= 1) {
+      setInsulationLowWarning(true)
+      insulationInputRef.current?.classList.add('input-insulation-low')
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleVoltage = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,12 +217,21 @@ const TestResultRowComp: React.FC<{
   const handleInsulation = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       storeRef.current[`testResult_${index}_insulation`] = e.target.value
-      const v = e.target.value
+      const v = e.target.value.trim()
       const bad = !!v && !INSULATION_PATTERN.test(v)
       e.target.classList.toggle('input-invalid', bad)
       setInsulationInvalid(bad)
+      /* Soft warning: numeric value ≤ 1 MΩ (exclude N/A, OL, empty) */
+      if (row.insulationDefault) {
+        setInsulationLowWarning(false)
+      } else {
+        const num = parseFloat(v)
+        const low = !bad && v !== '' && v.toUpperCase() !== 'OL' && v.toUpperCase() !== 'N/A' && !isNaN(num) && num <= 1
+        e.target.classList.toggle('input-insulation-low', low)
+        setInsulationLowWarning(low)
+      }
     },
-    [storeRef, index],
+    [storeRef, index, row.insulationDefault],
   )
   const handleComments = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,6 +261,7 @@ const TestResultRowComp: React.FC<{
       <td>
         <div className="table-input-cell">
           <input
+            ref={insulationInputRef}
             className="plain-input"
             inputMode="decimal"
             placeholder="MΩ"
@@ -244,6 +273,9 @@ const TestResultRowComp: React.FC<{
           />
           {insulationInvalid && (
             <span className="validation-hint">Number, N/A, or OL (e.g. 500)</span>
+          )}
+          {!insulationInvalid && insulationLowWarning && (
+            <span className="insulation-low-hint">Warning: Pass value should be &gt;1 MΩ</span>
           )}
         </div>
       </td>
@@ -348,6 +380,61 @@ const ApplyToAllRow: React.FC<{
 })
 ApplyToAllRow.displayName = 'ApplyToAllRow'
 
+type SectionStatus = 'all-acceptable' | 'defect' | 'incomplete'
+
+const SectionStatusBadge: React.FC<{
+  prefix: string
+  count: number
+  form: ReturnType<typeof Form.useForm>[0]
+  formVersion: number
+}> = React.memo(({ prefix, count, form, formVersion }) => {
+  void formVersion /* triggers re-render when parent bumps it */
+  const values = form.getFieldsValue(true)
+  let filled = 0
+  let hasDefect = false
+  for (let i = 0; i < count; i++) {
+    const v = values[`${prefix}_${i}_result`]
+    if (Array.isArray(v) && v.length > 0) {
+      filled++
+      if (v[0] === 'defect') hasDefect = true
+    }
+  }
+  const status: SectionStatus = hasDefect ? 'defect' : filled < count ? 'incomplete' : 'all-acceptable'
+  const className = `section-status-badge section-status-${status}`
+  const label =
+    status === 'all-acceptable'
+      ? '✓ All Acceptable'
+      : status === 'defect'
+        ? '✕ Defect Found'
+        : `Incomplete (${filled}/${count})`
+  return <span className={className}>{label}</span>
+})
+SectionStatusBadge.displayName = 'SectionStatusBadge'
+
+const DefectCommentsBadge: React.FC<{
+  form: ReturnType<typeof Form.useForm>[0]
+  formVersion: number
+  visualCount: number
+  inspectCount: number
+}> = React.memo(({ form, formVersion, visualCount, inspectCount }) => {
+  void formVersion /* triggers re-render when parent bumps it */
+  const values = form.getFieldsValue(true)
+  let hasDefect = false
+  for (let i = 0; i < visualCount; i++) {
+    const v = values[`visual_${i}_result`]
+    if (Array.isArray(v) && v[0] === 'defect') { hasDefect = true; break }
+  }
+  if (!hasDefect) {
+    for (let i = 0; i < inspectCount; i++) {
+      const v = values[`inspect_${i}_result`]
+      if (Array.isArray(v) && v[0] === 'defect') { hasDefect = true; break }
+    }
+  }
+  if (!hasDefect) return null
+  return <span className="section-defect-required-badge">Required - Defect found</span>
+})
+DefectCommentsBadge.displayName = 'DefectCommentsBadge'
+
 /* ================================================================
    Main Form Component
    ================================================================ */
@@ -435,6 +522,8 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
     autoSaveTimerRef.current = setTimeout(performAutoSave, 500)
   }, [performAutoSave])
 
+  const [formVersion, setFormVersion] = useState(0)
+
   useEffect(() => {
     const el = formContainerRef.current
     if (!el) return
@@ -465,7 +554,42 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
     })
   }, [onClearForm])
 
+  /* DC test pairs: (pos-neg, neg-earth) for DC 1, 2, 3 */
+  const DC_PAIRS: [number, number][] = [[10, 13], [11, 15], [12, 17]]
+
+  const hasIncompleteDCPairs = useCallback(() => {
+    const tr = testResultsRef.current
+    return DC_PAIRS.some(([a, b]) => {
+      const va = (tr[`testResult_${a}_voltage`] ?? '').toString().trim()
+      const vb = (tr[`testResult_${b}_voltage`] ?? '').toString().trim()
+      return (va !== '' && vb === '') || (va === '' && vb !== '')
+    })
+  }, [])
+
+  const hasAnyDefect = useCallback((formValues: Record<string, unknown>) => {
+    for (let i = 0; i < VISUAL_INSPECTION_ITEMS.length; i++) {
+      const v = formValues[`visual_${i}_result`]
+      if (Array.isArray(v) && v[0] === 'defect') return true
+    }
+    for (let i = 0; i < INSPECTION_TEST_ITEMS.length; i++) {
+      const v = formValues[`inspect_${i}_result`]
+      if (Array.isArray(v) && v[0] === 'defect') return true
+    }
+    return false
+  }, [])
+
   /* Submit — validate, save, navigate */
+  const doSubmit = useCallback(() => {
+    const formValues = form.getFieldsValue(true)
+    const allValues = {
+      ...formValues,
+      ...testResultsRef.current,
+      signoff_signature: signaturePadRef.current?.getValue() ?? signatureValueRef.current,
+    }
+    localStorage.setItem(STORAGE_KEY, serializeForStorage(allValues))
+    navigate('/preview')
+  }, [form, navigate])
+
   const handleSubmit = useCallback(async () => {
     const formValues = form.getFieldsValue(true)
 
@@ -500,14 +624,42 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
       return
     }
 
-    const allValues = {
-      ...formValues,
-      ...testResultsRef.current,
-      signoff_signature: signaturePadRef.current?.getValue() ?? signatureValueRef.current,
+    /* Defect → require Comments (blocks submission) */
+    if (hasAnyDefect(formValues)) {
+      const comments = (formValues.comments ?? '').toString().trim()
+      if (!comments) {
+        Toast.show({
+          content: 'Please describe the defect in the Comments section',
+          icon: 'fail',
+        })
+        const target = document.querySelector<HTMLElement>('[data-section="comments"]')
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          target.classList.add('field-error')
+          setTimeout(() => target.classList.remove('field-error'), 3000)
+        }
+        return
+      }
     }
-    localStorage.setItem(STORAGE_KEY, serializeForStorage(allValues))
-    navigate('/preview')
-  }, [form, navigate])
+
+    /* DC pair completeness (soft warning, optional continue) */
+    if (hasIncompleteDCPairs()) {
+      return new Promise<void>((resolve) => {
+        Dialog.confirm({
+          content: 'Some DC test pairs appear incomplete. Please review.',
+          confirmText: 'Continue Anyway',
+          cancelText: 'Cancel',
+          onConfirm: () => {
+            doSubmit()
+            resolve()
+          },
+          onCancel: () => resolve(),
+        })
+      })
+    }
+
+    doSubmit()
+  }, [form, navigate, hasAnyDefect, hasIncompleteDCPairs, doSubmit])
 
   return (
     <div className="form-container" ref={formContainerRef}>
@@ -549,7 +701,10 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
         form={form}
         layout="vertical"
         initialValues={savedFormValues}
-        onValuesChange={triggerAutoSave}
+        onValuesChange={() => {
+          setFormVersion((v) => v + 1)
+          triggerAutoSave()
+        }}
         footer={
           <Button
             block
@@ -563,8 +718,9 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
         }
       >
         {/* ===== Section 1 — Project Information ===== */}
-        <SectionHeader title="1. Project Information" />
-
+        <div id="section-1" className="section-card">
+          <SectionHeader title="1. Project Information" />
+          <div className="section-card-body">
         <div data-field="installationAddress">
           <Form.Item
             name="installationAddress"
@@ -604,24 +760,55 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
         <Form.Item name="itrApprovedBy" label="ITR Approved By">
           <Input placeholder="Enter name" />
         </Form.Item>
+          </div>
+        </div>
 
         {/* ===== Section 2 — Visual Inspection ===== */}
-        <SectionHeader title="2. Visual Inspection" />
+        <div id="section-2" className="section-card">
+        <SectionHeader
+          title="2. Visual Inspection"
+          badge={
+            <SectionStatusBadge
+              prefix="visual"
+              count={VISUAL_INSPECTION_ITEMS.length}
+              form={form}
+              formVersion={formVersion}
+            />
+          }
+        />
+          <div className="section-card-body">
         <ApplyToAllRow prefix="visual" count={VISUAL_INSPECTION_ITEMS.length} form={form} />
         {VISUAL_INSPECTION_ITEMS.map((item, idx) => (
           <InspectionItemBlock key={`vi_${idx}`} prefix="visual" index={idx} label={item} />
         ))}
+          </div>
+        </div>
 
         {/* ===== Section 3 — Inspection and Test ===== */}
-        <SectionHeader title="3. Inspection and Test" />
+        <div id="section-3" className="section-card">
+        <SectionHeader
+          title="3. Inspection and Test"
+          badge={
+            <SectionStatusBadge
+              prefix="inspect"
+              count={INSPECTION_TEST_ITEMS.length}
+              form={form}
+              formVersion={formVersion}
+            />
+          }
+        />
+          <div className="section-card-body">
         <ApplyToAllRow prefix="inspect" count={INSPECTION_TEST_ITEMS.length} form={form} />
         {INSPECTION_TEST_ITEMS.map((item, idx) => (
           <InspectionItemBlock key={`it_${idx}`} prefix="inspect" index={idx} label={item} />
         ))}
+          </div>
+        </div>
 
         {/* ===== Section 4 — Additional Testing ===== */}
+        <div id="section-4" className="section-card">
         <SectionHeader title="4. Additional Testing for Alternative Supply" />
-
+          <div className="section-card-body">
         {/* Test 1 */}
         <div className="additional-test-block">
           <div className="test-block-header">Test 1: Confirm MEN — Grid Supply Mode Test</div>
@@ -705,16 +892,24 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
             </div>
           </div>
         </div>
+          </div>
+        </div>
 
         {/* ===== Section 5 — Test Results ===== */}
+        <div id="section-5" className="section-card">
         <SectionHeader
           title="5. Test Results"
           subtitle="@500V DC or higher for insulation test · Insert N/A for non-applicable tests"
         />
+          <div className="section-card-body">
         <TestResultsTable storeRef={testResultsRef} defaults={testDefaults} />
+          </div>
+        </div>
 
         {/* ===== Section 6 — Equipment ===== */}
+        <div id="section-6" className="section-card">
         <SectionHeader title="6. Inspection and Test Equipment" />
+          <div className="section-card-body">
         <div className="equipment-section">
           <Form.Item label="No."><Input value="1" readOnly /></Form.Item>
           <Form.Item name="equipment_makeModel" label="Make / Model"><Input placeholder="Enter make and model" /></Form.Item>
@@ -722,13 +917,31 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
           <Form.Item name="equipment_calCertNo" label="Calibration Cert. No."><Input placeholder="Enter certificate number" /></Form.Item>
           <Form.Item name="equipment_calExpiry" label="Cal. Expiry Date"><DatePickerField /></Form.Item>
         </div>
+          </div>
+        </div>
 
         {/* ===== Section 7 — Comments ===== */}
-        <SectionHeader title="7. Comments" />
-        <Form.Item name="comments"><TextArea placeholder="Enter any comments..." rows={4} /></Form.Item>
+        <div id="section-7" className="section-card" data-section="comments">
+          <SectionHeader
+            title="7. Comments"
+            badge={
+              <DefectCommentsBadge
+                form={form}
+                formVersion={formVersion}
+                visualCount={VISUAL_INSPECTION_ITEMS.length}
+              inspectCount={INSPECTION_TEST_ITEMS.length}
+            />
+          }
+          />
+          <div className="section-card-body">
+          <Form.Item name="comments"><TextArea placeholder="Enter any comments..." rows={4} /></Form.Item>
+          </div>
+        </div>
 
         {/* ===== Section 8 — Defects ===== */}
+        <div id="section-8" className="section-card">
         <SectionHeader title="8. Defects" />
+          <div className="section-card-body">
         <div className="defects-section">
           <Form.Item name="defects">
             <Radio.Group>
@@ -739,9 +952,13 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
             </Radio.Group>
           </Form.Item>
         </div>
+          </div>
+        </div>
 
         {/* ===== Section 9 — Sign-off ===== */}
+        <div id="section-9" className="section-card">
         <SectionHeader title="9. Sign-off" />
+          <div className="section-card-body">
         <Form.Item name="signoff_testedBy" label="Tested By"><Input placeholder="Enter name" /></Form.Item>
         <Form.Item name="signoff_companyName" label="Company Name"><Input placeholder="Sunterra" /></Form.Item>
         <Form.Item name="signoff_licenceNo" label="Elec. Licence No."><ValidatedInput type="tel" placeholder="Enter licence number" validPattern={DIGITS_PATTERN} hint="Numbers only (e.g. 205567)" /></Form.Item>
@@ -754,7 +971,10 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
           />
         </Form.Item>
         <Form.Item name="signoff_date" label="Date"><DatePickerField /></Form.Item>
+          </div>
+        </div>
       </Form>
+      <SectionNav />
     </div>
   )
 }

@@ -81,12 +81,24 @@ function safeCaptureScale(elementHeight: number, captureWidth = 794): number {
   return Math.max(1, Math.floor(maxScale * 2) / 2)
 }
 
+const NARROW_BREAKPOINT = 400
+
 const Preview: React.FC = () => {
   const navigate = useNavigate()
   const previewRef = useRef<HTMLDivElement>(null)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [imageLoading, setImageLoading] = useState(false)
   const [mobile] = useState(isMobile)
+  const [narrowScreen, setNarrowScreen] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth <= NARROW_BREAKPOINT,
+  )
+
+  useEffect(() => {
+    const check = () => setNarrowScreen(window.innerWidth <= NARROW_BREAKPOINT)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   // Load form data from localStorage
   const [data] = useState<Data | null>(() => {
@@ -457,23 +469,23 @@ const Preview: React.FC = () => {
       {/* ---- Sticky bottom action bar (not captured in PDF) ---- */}
       <div className="preview-actions">
         <button className="pv-btn pv-btn-secondary" onClick={() => navigate('/')}>
-          ← Back to Edit
+          {mobile && narrowScreen ? '← Back' : '← Back to Edit'}
         </button>
         {mobile ? (
           <>
             <button
-              className="pv-btn pv-btn-primary"
+              className="pv-btn pv-btn-primary pv-btn-image"
               onClick={handleSaveAsImage}
               disabled={imageLoading || pdfLoading}
             >
-              {imageLoading ? 'Generating…' : '📷 Save as Image'}
+              {imageLoading ? 'Generating…' : narrowScreen ? 'Image' : 'Save as Image'}
             </button>
             <button
-              className="pv-btn pv-btn-outline"
+              className="pv-btn pv-btn-primary pv-btn-pdf"
               onClick={handleDownloadPdf}
               disabled={pdfLoading || imageLoading}
             >
-              {pdfLoading ? 'Generating…' : '↓ PDF'}
+              {pdfLoading ? 'Generating…' : narrowScreen ? 'PDF' : 'Download PDF'}
             </button>
           </>
         ) : (
