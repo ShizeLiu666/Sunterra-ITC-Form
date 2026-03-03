@@ -1,0 +1,349 @@
+/* ================================================================
+   Variation Order Preview
+   Reuses .preview-page, .preview-content, .preview-actions,
+   .pv-btn-*, .pdf-loading-overlay, .pdf-loading-spinner
+   from Preview.css.  Only VO-specific rules are defined here.
+   ================================================================ */
+
+/* ===== Document Header ===== */
+.vop-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 10px;
+}
+
+.vop-header-logo img {
+  width: 100px;
+  display: block;
+}
+
+.vop-header-title {
+  flex: 1;
+  text-align: right;
+}
+
+.vop-doc-label {
+  font-size: 22px;
+  font-weight: 800;
+  color: #213547;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.vop-header-meta {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  font-size: 10px;
+  color: #888;
+  margin-top: 4px;
+}
+
+/* Brand-colour rule below the header */
+.vop-header-rule {
+  height: 3px;
+  background: #04A38A;
+  margin: 8px 0 20px;
+  border-radius: 1px;
+}
+
+/* ===== Sections ===== */
+.vop-section {
+  margin-bottom: 20px;
+  page-break-inside: avoid;
+}
+
+.vop-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #fff;
+  background: #04A38A;
+  padding: 5px 10px;
+  margin-bottom: 10px;
+}
+
+/* ===== Project Information Table ===== */
+.vop-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.vop-info-table td {
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  vertical-align: top;
+}
+
+.vop-info-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  background: #f8f9fa;
+  white-space: nowrap;
+  width: 1%;
+}
+
+.vop-info-value {
+  color: #222;
+  font-weight: 500;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* ===== Extra Work Table ===== */
+.vop-work-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  table-layout: fixed;
+}
+
+.vop-work-table th {
+  background: #04A38A;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 8px;
+  text-align: left;
+  border: 1px solid #038a74;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 0;
+}
+
+.vop-work-table td {
+  padding: 7px 8px;
+  border: 1px solid #d1d5db;
+  vertical-align: top;
+  color: #333;
+  line-height: 1.45;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 0;
+}
+
+.vop-work-table tbody tr:nth-child(even) td {
+  background: #f9fafb;
+}
+
+.vop-col-num    { width: 32px; }
+.vop-col-desc   { width: 40%; }
+.vop-col-reason { width: 30%; }
+.vop-col-amount { width: 16%; min-width: 90px; }
+
+.vop-cell-center {
+  text-align: center;
+  color: #555;
+  font-weight: 600;
+}
+
+.vop-cell-amount {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.vop-cell-empty {
+  text-align: center;
+  color: #aaa;
+  font-style: italic;
+  padding: 16px 8px;
+}
+
+/* Total row */
+.vop-total-row td {
+  border-top: 2px solid #04A38A !important;
+  background: #EDF7F5 !important;
+}
+
+.vop-total-label {
+  text-align: right;
+  font-size: 12px;
+  font-weight: 700;
+  color: #04A38A;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding-right: 12px !important;
+}
+
+.vop-total-value {
+  text-align: right !important;
+  font-size: 15px;
+  font-weight: 800;
+  color: #04A38A;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Sign-off ===== */
+.vop-signoff-section {
+  page-break-inside: avoid;
+}
+
+.vop-signoff-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.vop-sig-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.vop-sig-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 6px;
+}
+
+/* Fixed-height box for signature image or empty space */
+.vop-sig-box {
+  height: 80px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.vop-sig-img {
+  max-width: 100%;
+  max-height: 76px;
+  object-fit: contain;
+}
+
+.vop-sig-placeholder {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Signature underline */
+.vop-sig-line {
+  height: 1px;
+  background: #333;
+  margin-bottom: 4px;
+}
+
+.vop-sig-caption {
+  font-size: 10px;
+  color: #888;
+  text-align: center;
+}
+
+/* Date row */
+.vop-sig-date-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.vop-sig-date-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
+}
+
+.vop-sig-date-value {
+  font-weight: 600;
+  color: #222;
+}
+
+/* Legal declaration */
+.vop-declaration {
+  font-size: 10px;
+  color: #666;
+  line-height: 1.55;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+}
+
+/* ===== Document Footer ===== */
+.vop-footer {
+  text-align: center;
+  font-size: 10px;
+  color: #aaa;
+  margin-top: 24px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+/* ================================================================
+   Responsive — Mobile (≤ 480px)
+   ================================================================ */
+@media (max-width: 480px) {
+  .vop-content {
+    margin: 0;
+    padding: 16px 12px 24px;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .vop-doc-label {
+    font-size: 17px;
+  }
+
+  /* Stack sign-off signatures on narrow screens */
+  .vop-signoff-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vop-work-table th,
+  .vop-work-table td {
+    font-size: 11px;
+    padding: 5px 5px;
+  }
+
+  /* Hide Reason column on very small screens to avoid overflow */
+  .vop-col-reason,
+  .vop-work-table th:nth-child(3),
+  .vop-work-table td:nth-child(3) {
+    display: none;
+  }
+}
+
+/* ================================================================
+   Responsive — Tablet (481px – 768px)
+   ================================================================ */
+@media (min-width: 481px) and (max-width: 768px) {
+  .vop-content {
+    margin: 12px auto 0;
+    max-width: 600px;
+  }
+}
+
+/* ================================================================
+   Print styles
+   ================================================================ */
+@media print {
+  .vop-content {
+    margin: 0;
+    padding: 10mm;
+    box-shadow: none;
+    max-width: none;
+  }
+
+  .vop-section {
+    page-break-inside: avoid;
+  }
+}

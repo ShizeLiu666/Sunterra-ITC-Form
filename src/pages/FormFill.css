@@ -273,7 +273,7 @@
 /* ===== Inspection Items — flat, aligned with form labels ===== */
 .inspection-item {
   margin-bottom: 8px;
-  padding: 12px 16px 12px 16px;
+  padding: 12px 0;
   contain: layout style;
   content-visibility: auto;
   contain-intrinsic-size: auto 180px;
@@ -333,7 +333,7 @@
 /* ===== Additional Test Blocks ===== */
 .additional-test-block {
   margin-bottom: 8px;
-  padding: 12px 16px 12px 16px;
+  padding: 12px 0;
   contain: layout style;
   content-visibility: auto;
   contain-intrinsic-size: auto 400px;
@@ -437,7 +437,7 @@
 }
 
 .test-results-table .adm-input-element {
-  padding: 4px 2px;
+  padding: 4px 2px !important;
 }
 
 /* Plain <input> elements used inside the table (no antd-mobile overhead) */
@@ -470,7 +470,7 @@
 /* ===== Equipment Section ===== */
 .equipment-section {
   margin-bottom: 8px;
-  padding: 12px 16px 12px 16px;
+  padding: 12px 0;
 }
 
 /* ===== Defects Section ===== */
@@ -581,7 +581,6 @@
 }
 
 .form-container .adm-list-item {
-  padding-left: 16px;
   box-shadow: none !important;
   border: none !important;
 }
@@ -656,31 +655,13 @@
     margin: 0 -16px;
   }
 
-  .inspection-item {
-    margin-bottom: 8px;
-    padding: 12px 20px 12px 20px;
-  }
-
-  .additional-test-block {
-    margin-bottom: 8px;
-    padding: 12px 20px 12px 20px;
-  }
 
   .test-results-scroll {
     margin-bottom: 8px;
   }
 
-  .equipment-section {
-    margin-bottom: 8px;
-    padding: 12px 20px 12px 20px;
-  }
-
   .defects-section {
     margin: 0;
-  }
-
-  .form-container .adm-list-item {
-    padding-left: 20px;
   }
 
   .form-container .adm-form-footer {
@@ -732,18 +713,8 @@
     margin: 0 -16px;
   }
 
-  .inspection-item {
-    margin-bottom: 8px;
-    padding: 12px 24px 12px 24px;
-  }
-
   .inspection-item-text {
     font-size: 15px;
-  }
-
-  .additional-test-block {
-    margin-bottom: 8px;
-    padding: 12px 24px 12px 24px;
   }
 
   .test-description {
@@ -775,21 +746,12 @@
     padding: 6px 8px;
   }
 
-  .equipment-section {
-    margin-bottom: 8px;
-    padding: 12px 24px 12px 24px;
-  }
-
   .defects-section {
     margin: 0;
   }
 
   .defects-section .adm-radio {
     font-size: 14px;
-  }
-
-  .form-container .adm-list-item {
-    padding-left: 24px;
   }
 
   .form-container .adm-form-footer {

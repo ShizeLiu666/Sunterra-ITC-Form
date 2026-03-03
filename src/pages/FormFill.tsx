@@ -587,7 +587,7 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
       signoff_signature: signaturePadRef.current?.getValue() ?? signatureValueRef.current,
     }
     localStorage.setItem(STORAGE_KEY, serializeForStorage(allValues))
-    navigate('/preview')
+    navigate('/itr/preview')
   }, [form, navigate])
 
   const handleSubmit = useCallback(async () => {
@@ -934,7 +934,7 @@ const FormFill: React.FC<{ onClearForm: () => void }> = ({ onClearForm }) => {
           }
           />
           <div className="section-card-body">
-          <Form.Item name="comments"><TextArea placeholder="Enter any comments..." rows={4} /></Form.Item>
+          <Form.Item name="comments"><TextArea className="comments-textarea" placeholder="Enter any comments..." rows={4} /></Form.Item>
           </div>
         </div>
 

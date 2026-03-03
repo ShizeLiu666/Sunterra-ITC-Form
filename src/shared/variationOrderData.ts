@@ -19,7 +19,6 @@ export interface WorkItem {
 /** Full Variation Order form data */
 export interface VariationOrderData {
   jobNumber: string
-  customerName: string
   installationAddress: string
   date: string
 
@@ -36,6 +35,17 @@ export interface VariationOrderData {
 
 export const VARIATION_ORDER_STORAGE_KEY = 'sunterra_variation_order_draft'
 
+/** Reason for change options (Picker/Selector). "Other" can have free text appended. */
+export const VARIATION_REASONS = [
+  { label: 'Site condition', value: 'Site condition' },
+  { label: 'Customer request', value: 'Customer request' },
+  { label: 'Compliance requirement', value: 'Compliance requirement' },
+  { label: 'Equipment unavailability', value: 'Equipment unavailability' },
+  { label: 'Roof / structural issue', value: 'Roof / structural issue' },
+  { label: 'Electrical upgrade required', value: 'Electrical upgrade required' },
+  { label: 'Other', value: 'Other' },
+]
+
 export function createEmptyWorkItem(): WorkItem {
   return {
     id: Date.now().toString(),
@@ -49,7 +59,6 @@ export function createEmptyVariationOrder(): VariationOrderData {
   const today = formatDate(new Date())
   return {
     jobNumber: '',
-    customerName: '',
     installationAddress: '',
     date: today,
     workItems: [],

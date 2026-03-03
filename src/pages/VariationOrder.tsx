@@ -1,8 +1,10 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  Form,
   Input,
   TextArea,
+  Picker,
   DatePicker,
   Button,
   Toast,
@@ -19,6 +21,7 @@ import {
   clearVariationOrder,
   calculateTotal,
   formatCurrency,
+  VARIATION_REASONS,
 } from '../shared/variationOrderData'
 import type { VariationOrderData, WorkItem } from '../shared/variationOrderData'
 import { formatDate } from '../shared/formData'
@@ -88,6 +91,88 @@ const SectionHeader: React.FC<{ title: string }> = React.memo(({ title }) => (
 ))
 SectionHeader.displayName = 'SectionHeader'
 
+/** Filter amount input: digits and one decimal point only */
+function filterAmountValue(val: string): string {
+  return val
+    .replace(/[^0-9.]/g, '')
+    .replace(/(\..*)\./g, '$1')
+}
+
+/** Input for amount used inside Form.Item; filters non-numeric input */
+const AmountInput: React.FC<{
+  value?: string
+  onChange?: (val: string) => void
+}> = React.memo(({ value, onChange }) => (
+  <div className="vo-amount-row">
+    <span className="vo-amount-prefix">$</span>
+    <Input
+      value={value ?? ''}
+      onChange={(val) => onChange?.(filterAmountValue(val))}
+      placeholder="0.00"
+      inputMode="decimal"
+      type="text"
+      pattern="[0-9]*\.?[0-9]*"
+    />
+  </div>
+))
+AmountInput.displayName = 'AmountInput'
+
+/* ================================================================
+   Reason Picker — Form.Item-compatible controlled component
+   ================================================================ */
+
+const ReasonPickerField: React.FC<{
+  value?: string
+  onChange?: (val: string) => void
+}> = React.memo(({ value = '', onChange }) => {
+  const [visible, setVisible] = useState(false)
+  const reasonSelected = value.startsWith('Other') ? 'Other' : value || null
+  const otherReasonText = value.startsWith('Other: ') ? value.slice(7) : ''
+  const displayLabel =
+    reasonSelected &&
+    (VARIATION_REASONS.find((r) => r.value === reasonSelected)?.label ??
+      reasonSelected)
+
+  return (
+    <>
+      <div
+        className={`vo-reason-trigger${displayLabel ? '' : ' placeholder'}`}
+        onClick={() => setVisible(true)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setVisible(true)
+          }
+        }}
+      >
+        {displayLabel ?? 'Select reason'}
+      </div>
+      <Picker
+        columns={[VARIATION_REASONS]}
+        value={reasonSelected ? [reasonSelected] : []}
+        visible={visible}
+        onClose={() => setVisible(false)}
+        onConfirm={(val) => {
+          const selected = (val as (string | null)[])?.[0] ?? ''
+          onChange?.(selected === 'Other' ? 'Other' : selected)
+          setVisible(false)
+        }}
+      />
+      {reasonSelected === 'Other' && (
+        <Input
+          className="vo-reason-other-input"
+          value={otherReasonText}
+          onChange={(v) => onChange?.(v ? `Other: ${v}` : 'Other')}
+          placeholder="Specify reason"
+        />
+      )}
+    </>
+  )
+})
+ReasonPickerField.displayName = 'ReasonPickerField'
+
 /* ================================================================
    Work Item Block
    ================================================================ */
@@ -96,9 +181,8 @@ const WorkItemBlock: React.FC<{
   item: WorkItem
   index: number
   showDelete: boolean
-  onChange: (id: string, field: keyof WorkItem, value: string) => void
   onDelete: (id: string) => void
-}> = React.memo(({ item, index, showDelete, onChange, onDelete }) => (
+}> = React.memo(({ item, index, showDelete, onDelete }) => (
   <div className="vo-work-item">
     <div className="vo-work-item-header">
       <span className="vo-work-item-number">#{index + 1}</span>
@@ -115,38 +199,37 @@ const WorkItemBlock: React.FC<{
     </div>
 
     <div className="vo-field-group">
-      <label className="vo-label">Description of Extra Work</label>
-      <TextArea
-        value={item.description}
-        onChange={(val) => onChange(item.id, 'description', val)}
-        placeholder="Brief description of extra work"
-        maxLength={200}
-        rows={2}
-        showCount
-      />
+      <Form.Item
+        name={['workItems', index, 'reason']}
+        label="Reason for Change"
+      >
+        <ReasonPickerField />
+      </Form.Item>
     </div>
 
     <div className="vo-field-group">
-      <label className="vo-label">Reason for Change</label>
-      <Input
-        value={item.reason}
-        onChange={(val) => onChange(item.id, 'reason', val)}
-        placeholder="e.g. Site condition, customer request"
-      />
-    </div>
-
-    <div className="vo-field-group">
-      <label className="vo-label">Amount (GST incl.)</label>
-      <div className="vo-amount-row">
-        <span className="vo-amount-prefix">$</span>
-        <Input
-          value={item.amount}
-          onChange={(val) => onChange(item.id, 'amount', val)}
-          placeholder="0.00"
-          inputMode="decimal"
-          type="text"
+      <Form.Item
+        name={['workItems', index, 'description']}
+        label="Description of Extra Work"
+        rules={[{ required: true, message: 'Description is required' }]}
+      >
+        <TextArea
+          placeholder="Brief description of extra work"
+          maxLength={200}
+          rows={2}
+          showCount
         />
-      </div>
+      </Form.Item>
+    </div>
+
+    <div className="vo-field-group">
+      <Form.Item
+        name={['workItems', index, 'amount']}
+        label="Amount (GST incl.)"
+        rules={[{ required: true, message: 'Amount is required' }]}
+      >
+        <AmountInput />
+      </Form.Item>
     </div>
   </div>
 ))
@@ -156,12 +239,36 @@ WorkItemBlock.displayName = 'WorkItemBlock'
    Main Component
    ================================================================ */
 
+function mergeFormWorkItems(
+  prev: WorkItem[],
+  next: unknown,
+): WorkItem[] {
+  if (!next || !Array.isArray(next)) return prev
+  return (next as Partial<WorkItem>[]).map((w, i) => ({
+    id: prev[i]?.id ?? (w as WorkItem).id ?? '',
+    description: w.description ?? '',
+    reason: w.reason ?? '',
+    amount: w.amount ?? '',
+  }))
+}
+
 const VariationOrder: React.FC = () => {
   const navigate = useNavigate()
+  const [form] = Form.useForm()
 
   const [data, setData] = useState<VariationOrderData>(
     () => loadVariationOrder() ?? createEmptyVariationOrder(),
   )
+
+  const workItemsLengthRef = useRef(data.workItems.length)
+
+  /* Sync form when work items are added/removed (or after clear) */
+  useEffect(() => {
+    if (data.workItems.length !== workItemsLengthRef.current) {
+      workItemsLengthRef.current = data.workItems.length
+      form.setFieldsValue({ workItems: data.workItems })
+    }
+  }, [data.workItems.length, data.workItems, form])
 
   /* Signature refs */
   const installerSigRef = useRef<SignaturePadHandle>(null)
@@ -211,23 +318,6 @@ const VariationOrder: React.FC = () => {
     [triggerAutoSave],
   )
 
-  /* Work item handlers */
-  const handleWorkItemChange = useCallback(
-    (id: string, field: keyof WorkItem, value: string) => {
-      setData((prev) => {
-        const next: VariationOrderData = {
-          ...prev,
-          workItems: prev.workItems.map((item) =>
-            item.id === id ? { ...item, [field]: value } : item,
-          ),
-        }
-        triggerAutoSave(next)
-        return next
-      })
-    },
-    [triggerAutoSave],
-  )
-
   const handleAddItem = useCallback(() => {
     setData((prev) => {
       const next: VariationOrderData = {
@@ -264,51 +354,58 @@ const VariationOrder: React.FC = () => {
         clearVariationOrder()
         installerSigRef.current?.clear()
         customerSigRef.current?.clear()
-        setData(createEmptyVariationOrder())
+        const empty = createEmptyVariationOrder()
+        setData(empty)
+        form.setFieldsValue(empty)
+        workItemsLengthRef.current = 0
         Toast.show({ content: 'Form cleared', icon: 'success' })
       },
     })
-  }, [])
+  }, [form])
 
   /* Validate & submit */
   const handlePreview = useCallback(() => {
-    const { jobNumber, customerName, installationAddress, workItems } = data
-    const missing: string[] = []
-    if (!jobNumber.trim()) missing.push('Job Number')
-    if (!customerName.trim()) missing.push('Customer Name')
-    if (!installationAddress.trim()) missing.push('Installation Address')
-
-    if (missing.length > 0) {
-      Toast.show({ content: `Please fill in: ${missing.join(', ')}`, icon: 'fail' })
-      return
-    }
-
-    const hasValidItem = workItems.some(
-      (item) => item.description.trim() && item.amount.trim(),
-    )
-    if (!hasValidItem) {
+    if (data.workItems.length === 0) {
       Toast.show({
-        content: 'Add at least one work item with description and amount',
+        content: 'Please add at least one work item',
         icon: 'fail',
       })
       return
     }
-
-    const customerSig = customerSigRef.current?.getValue() ?? data.customerSignature
-    if (!customerSig) {
-      Toast.show({ content: 'Customer signature is required', icon: 'fail' })
-      return
-    }
-
-    // Save with latest signatures before navigating
-    const withSigs: VariationOrderData = {
-      ...data,
-      installerSignature: installerSigRef.current?.getValue() ?? data.installerSignature,
-      customerSignature: customerSig,
-    }
-    saveVariationOrder(withSigs)
-    navigate('/variation-order/preview')
-  }, [data, navigate])
+    form
+      .validateFields()
+      .then(() => {
+        const customerSig =
+          customerSigRef.current?.getValue() ?? data.customerSignature
+        if (!customerSig) {
+          Toast.show({
+            content: 'Customer signature is required',
+            icon: 'fail',
+          })
+          return
+        }
+        const withSigs: VariationOrderData = {
+          ...data,
+          ...form.getFieldsValue(),
+          workItems: mergeFormWorkItems(
+            data.workItems,
+            form.getFieldsValue().workItems,
+          ),
+          installerSignature:
+            installerSigRef.current?.getValue() ?? data.installerSignature,
+          customerSignature: customerSig,
+        }
+        saveVariationOrder(withSigs)
+        navigate('/variation-order/preview')
+      })
+      .catch((err: { errorFields?: Array<{ errors?: string[] }> }) => {
+        const firstMsg = err.errorFields?.[0]?.errors?.[0]
+        Toast.show({
+          content: firstMsg ?? 'Please complete required fields',
+          icon: 'fail',
+        })
+      })
+  }, [data, form, navigate])
 
   const total = calculateTotal(data.workItems)
 
@@ -348,42 +445,51 @@ const VariationOrder: React.FC = () => {
         </button>
       </div>
 
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={data}
+        onValuesChange={(_, allValues) => {
+          setData((prev) => {
+            const next: VariationOrderData = {
+              ...prev,
+              jobNumber: (allValues.jobNumber as string) ?? prev.jobNumber,
+              installationAddress:
+                (allValues.installationAddress as string) ?? prev.installationAddress,
+              date: (allValues.date as string) ?? prev.date,
+              workItems: mergeFormWorkItems(prev.workItems, allValues.workItems),
+            }
+            triggerAutoSave(next)
+            return next
+          })
+        }}
+      >
       {/* ===== Section 1 — Project Information ===== */}
       <div className="section-card">
         <SectionHeader title="1. Project Information" />
         <div className="section-card-body">
           <div className="vo-form-item">
-            <label className="vo-label">Job Number</label>
-            <Input
-              value={data.jobNumber}
-              onChange={(val) => update({ jobNumber: val })}
-              placeholder="Enter job number"
-              type="tel"
-            />
+            <Form.Item
+              name="jobNumber"
+              label="Job Number"
+              rules={[{ required: true, message: 'Job Number is required' }]}
+            >
+              <Input placeholder="Enter job number" type="tel" />
+            </Form.Item>
           </div>
           <div className="vo-form-item">
-            <label className="vo-label">Customer Name</label>
-            <Input
-              value={data.customerName}
-              onChange={(val) => update({ customerName: val })}
-              placeholder="Enter customer name"
-            />
+            <Form.Item
+              name="installationAddress"
+              label="Installation Address"
+              rules={[{ required: true, message: 'Installation Address is required' }]}
+            >
+              <Input placeholder="Enter installation address" />
+            </Form.Item>
           </div>
           <div className="vo-form-item">
-            <label className="vo-label">Installation Address</label>
-            <TextArea
-              value={data.installationAddress}
-              onChange={(val) => update({ installationAddress: val })}
-              placeholder="Enter installation address"
-              rows={2}
-            />
-          </div>
-          <div className="vo-form-item">
-            <label className="vo-label">Date</label>
-            <DatePickerField
-              value={data.date}
-              onChange={(val) => update({ date: val })}
-            />
+            <Form.Item name="date" label="Date">
+              <DatePickerField />
+            </Form.Item>
           </div>
         </div>
       </div>
@@ -398,7 +504,6 @@ const VariationOrder: React.FC = () => {
               item={item}
               index={idx}
               showDelete={data.workItems.length > 1}
-              onChange={handleWorkItemChange}
               onDelete={handleDeleteItem}
             />
           ))}
@@ -436,7 +541,10 @@ const VariationOrder: React.FC = () => {
           </div>
 
           <div className="vo-form-item">
-            <label className="vo-label">Customer Signature</label>
+            <label className="vo-label">
+              Customer Signature
+              <span className="vo-required-asterisk" aria-hidden> *</span>
+            </label>
             <SignaturePad
               ref={customerSigRef}
               initialValue={data.customerSignature}
@@ -456,6 +564,7 @@ const VariationOrder: React.FC = () => {
           </div>
         </div>
       </div>
+      </Form>
 
       {/* ===== Footer Button ===== */}
       <div className="vo-form-footer">

@@ -17,6 +17,14 @@
   --adm-color-primary-light: rgba(4, 163, 138, 0.15);
 }
 
+/* ===== Global Form layout — strip default left indent =====
+   antd-mobile sets --padding-left: 16px on .adm-form .adm-list.adm-list;
+   zero it out here so Form.Items align flush with section-card-body padding. */
+.adm-form .adm-list.adm-list {
+  --padding-left: 0;
+  --padding-right: 0;
+}
+
 /* ===== Global antd-mobile brand-color overrides ===== */
 
 /* Radio checked state */
@@ -110,9 +118,33 @@ a,
   touch-action: manipulation;
 }
 
+/* ===== Label / input visual hierarchy ===== */
+
+/* Labels: smaller, muted grey, slightly heavier */
+.adm-form-item-label {
+  font-size: 13px !important;
+  color: #555 !important;
+  font-weight: 600 !important;
+}
+
+/* Input / TextArea values: normal size, dark */
+.adm-input-element {
+  font-size: 15px !important;
+  color: #222 !important;
+  font-weight: 400 !important;
+  padding: 6px 12px !important;
+}
+
+.adm-text-area-element {
+  font-size: 15px !important;
+  color: #222 !important;
+  font-weight: 400 !important;
+  padding: 8px 12px !important;
+}
+
 /* Prevent iOS Safari auto-zoom on input focus.
    iOS ignores maximum-scale=1 on some versions; 16px is the only reliable fix.
-   antd-mobile default Input uses --adm-font-size-5 (15px), which can still trigger zoom. */
+   This must come AFTER the 15px rule above so it wins on mobile. */
 @media (max-width: 768px) {
   .adm-input-element,
   .adm-text-area-element {

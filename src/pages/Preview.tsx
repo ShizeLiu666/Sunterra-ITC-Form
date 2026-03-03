@@ -112,7 +112,7 @@ const Preview: React.FC = () => {
 
   // Redirect if no data
   useEffect(() => {
-    if (!data) navigate('/', { replace: true })
+    if (!data) navigate('/itr', { replace: true })
   }, [data, navigate])
 
   /* ---- PDF generation ---- */
@@ -468,7 +468,7 @@ const Preview: React.FC = () => {
 
       {/* ---- Sticky bottom action bar (not captured in PDF) ---- */}
       <div className="preview-actions">
-        <button className="pv-btn pv-btn-secondary" onClick={() => navigate('/')}>
+        <button className="pv-btn pv-btn-secondary" onClick={() => navigate('/itr')}>
           {mobile && narrowScreen ? '← Back' : '← Back to Edit'}
         </button>
         {mobile ? (

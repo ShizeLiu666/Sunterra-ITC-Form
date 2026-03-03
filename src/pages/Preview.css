@@ -237,6 +237,7 @@
   border-collapse: collapse;
   font-size: 11px;
   margin-bottom: 4px;
+  table-layout: fixed;
 }
 
 .pv-table th {
@@ -255,6 +256,10 @@
   vertical-align: top;
   color: #333;
   line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 0;
 }
 
 .pv-table tr:last-child td {
