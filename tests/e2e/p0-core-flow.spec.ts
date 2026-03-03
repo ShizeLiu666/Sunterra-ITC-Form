@@ -21,7 +21,7 @@ const TEST_DATA = {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/itr')
   await page.evaluate(() => localStorage.clear())
   await page.reload()
 })
@@ -50,7 +50,7 @@ test('submit is blocked when required fields are empty', async ({ page }) => {
   // Should show error toast mentioning missing fields
   await expect(page.locator('text=Please fill in')).toBeVisible()
   // Should still be on the form page, not navigated to preview
-  await expect(page).toHaveURL('/')
+  await expect(page).toHaveURL('/itr')
 })
 
 test('submit is blocked with partial required fields', async ({ page }) => {
@@ -66,7 +66,7 @@ test('submit is blocked with partial required fields', async ({ page }) => {
   await page.waitForSelector('text=Preview & Submit', { state: 'visible' })
   await page.click('text=Preview & Submit')
   await expect(page.locator('text=Please fill in')).toBeVisible()
-  await expect(page).toHaveURL('/')
+  await expect(page).toHaveURL('/itr')
 })
 
 test('filling required fields and submitting navigates to preview', async ({
@@ -87,7 +87,7 @@ test('filling required fields and submitting navigates to preview', async ({
   await page.waitForSelector('text=Preview & Submit', { state: 'visible' })
   await page.click('text=Preview & Submit')
   // Should navigate to preview
-  await page.waitForURL('/preview', { timeout: 15000 })
+  await page.waitForURL('/itr/preview', { timeout: 15000 })
 })
 
 test('preview page shows the submitted form data', async ({ page }, testInfo) => {
@@ -113,7 +113,7 @@ test('preview page shows the submitted form data', async ({ page }, testInfo) =>
   // Submit
   await page.waitForSelector('text=Preview & Submit', { state: 'visible' })
   await page.click('text=Preview & Submit')
-  await page.waitForURL('/preview', { timeout: 15000 })
+  await page.waitForURL('/itr/preview', { timeout: 15000 })
   // Verify data is displayed on preview
   await expect(
     page.locator(`text=${TEST_DATA.fullInstall.address}`),
@@ -166,7 +166,7 @@ test('download PDF generates a file', async ({ page }, testInfo) => {
   await page.waitForTimeout(300)
   await page.waitForSelector('text=Preview & Submit', { state: 'visible' })
   await page.click('text=Preview & Submit')
-  await page.waitForURL('/preview', { timeout: 15000 })
+  await page.waitForURL('/itr/preview', { timeout: 15000 })
   // Listen for download event
   const downloadPromise = page.waitForEvent('download', { timeout: 60000 })
   await page.waitForSelector('text=Download PDF', { state: 'visible' })

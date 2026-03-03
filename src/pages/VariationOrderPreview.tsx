@@ -263,8 +263,7 @@ const VariationOrderPreview: React.FC = () => {
             </tbody>
             <tfoot>
               <tr className="vop-total-row">
-                {/* colSpan matches visible columns: Reason column hidden on ≤ 480px */}
-                <td colSpan={narrowScreen ? 2 : 3} className="vop-total-label">TOTAL (GST inclusive)</td>
+                <td colSpan={3} className="vop-total-label">TOTAL (GST inclusive)</td>
                 <td className="vop-total-value">{formatCurrency(total)}</td>
               </tr>
             </tfoot>

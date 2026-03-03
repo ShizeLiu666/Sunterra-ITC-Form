@@ -137,9 +137,9 @@
 }
 
 .vop-col-num    { width: 32px; }
-.vop-col-desc   { width: 40%; }
+.vop-col-desc   { width: 35%; }
 .vop-col-reason { width: 30%; }
-.vop-col-amount { width: 16%; min-width: 90px; }
+.vop-col-amount { width: 20%; min-width: 110px; }
 
 .vop-cell-center {
   text-align: center;
@@ -151,6 +151,8 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .vop-cell-empty {
@@ -314,12 +316,6 @@
     padding: 5px 5px;
   }
 
-  /* Hide Reason column on very small screens to avoid overflow */
-  .vop-col-reason,
-  .vop-work-table th:nth-child(3),
-  .vop-work-table td:nth-child(3) {
-    display: none;
-  }
 }
 
 /* ================================================================
