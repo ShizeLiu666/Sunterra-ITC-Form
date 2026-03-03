@@ -109,6 +109,78 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ===== Mobile trigger + modal signing ===== */
+.sig-mobile-trigger {
+  width: 100%;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  background: #fafafa;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.sig-mobile-hint {
+  font-size: 13px;
+  color: #666;
+}
+
+.sig-mobile-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+}
+
+.sig-mobile-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.sig-mobile-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  max-height: 80vh;
+  overflow: auto;
+}
+
+.sig-mobile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.sig-mobile-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+}
+
+.sig-mobile-close {
+  border: none;
+  background: none;
+  color: #04A38A;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
 /* ===== Desktop (> 768px) — taller canvas ===== */
 @media (min-width: 769px) {
   .sig-canvas-area {

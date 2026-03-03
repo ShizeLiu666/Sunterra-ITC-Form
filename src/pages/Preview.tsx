@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
+import { Toast } from 'antd-mobile'
 import sunteraLogo from '../assets/Sunterra_Logo.png'
 import {
   STORAGE_KEY,
@@ -203,6 +204,43 @@ const Preview: React.FC = () => {
       const datePart = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
       const timePart = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`
       const filename = `ITR_${safeName}_${jobNum}_${datePart}_${timePart}.png`
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob((b) => resolve(b), 'image/png'),
+      )
+      if (!blob) {
+        Toast.show({ content: 'Failed to generate image', icon: 'fail' })
+        return
+      }
+
+      const shareNavigator = navigator as Navigator & {
+        canShare?: (data: ShareData) => boolean
+      }
+      const canShareFile =
+        typeof shareNavigator.share === 'function' &&
+        typeof File !== 'undefined' &&
+        (typeof shareNavigator.canShare !== 'function' ||
+          shareNavigator.canShare({
+            files: [new File([blob], filename, { type: 'image/png' })],
+          }))
+
+      if (isMobile() && canShareFile) {
+        try {
+          const file = new File([blob], filename, { type: 'image/png' })
+          await shareNavigator.share({
+            files: [file],
+            title: 'Sunterra Form Image',
+            text: 'Save to your Photos/Album',
+          })
+          Toast.show({
+            content: 'Use "Save Image/Save to Photos" in the share menu.',
+            icon: 'success',
+            duration: 2200,
+          })
+          return
+        } catch {
+          // User cancelled or share failed; continue to fallback below.
+        }
+      }
 
       if (isIOS()) {
         const dataUrl = canvas.toDataURL('image/png')
@@ -211,20 +249,22 @@ const Preview: React.FC = () => {
           newTab.document.write(
             `<html><head><title>${filename}</title><meta name="viewport" content="width=device-width,initial-scale=1"></head>` +
             `<body style="margin:0;display:flex;justify-content:center;background:#e8e8e8">` +
-            `<img src="${dataUrl}" style="width:100%;max-width:800px" /></body></html>`
+            `<img src="${dataUrl}" style="width:100%;max-width:800px" /></body></html>`,
           )
           newTab.document.close()
+          Toast.show({
+            content: 'Long-press the image, then tap "Save to Photos".',
+            duration: 2600,
+          })
         }
       } else {
-        canvas.toBlob((blob) => {
-          if (!blob) return
-          const url = URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = filename
-          a.click()
-          URL.revokeObjectURL(url)
-        }, 'image/png')
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        a.click()
+        URL.revokeObjectURL(url)
+        Toast.show({ content: 'Image downloaded', icon: 'success', duration: 1600 })
       }
     } finally {
       el.setAttribute('style', originalStyle)
