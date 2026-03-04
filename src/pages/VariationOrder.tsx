@@ -276,10 +276,12 @@ const VariationOrder: React.FC = () => {
 
   /* Auto-save */
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isClearingRef = useRef(false)
   const [draftSave, setDraftSave] = useState<{ time: string; key: number } | null>(null)
   const saveKeyRef = useRef(0)
 
   const performSave = useCallback((latest: VariationOrderData) => {
+    if (isClearingRef.current) return
     const withSigs: VariationOrderData = {
       ...latest,
       installerSignature: installerSigRef.current?.getValue() ?? latest.installerSignature,
@@ -294,6 +296,7 @@ const VariationOrder: React.FC = () => {
 
   const triggerAutoSave = useCallback(
     (latest: VariationOrderData) => {
+      if (isClearingRef.current) return
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
       autoSaveTimerRef.current = setTimeout(() => performSave(latest), 500)
     },
@@ -351,13 +354,22 @@ const VariationOrder: React.FC = () => {
       confirmText: 'Clear',
       cancelText: 'Cancel',
       onConfirm: () => {
+        isClearingRef.current = true
+        if (autoSaveTimerRef.current) {
+          clearTimeout(autoSaveTimerRef.current)
+          autoSaveTimerRef.current = null
+        }
         clearVariationOrder()
         installerSigRef.current?.clear()
         customerSigRef.current?.clear()
         const empty = createEmptyVariationOrder()
         setData(empty)
         form.setFieldsValue(empty)
-        workItemsLengthRef.current = 0
+        workItemsLengthRef.current = empty.workItems.length
+        clearVariationOrder()
+        requestAnimationFrame(() => {
+          isClearingRef.current = false
+        })
         Toast.show({ content: 'Form cleared', icon: 'success' })
       },
     })
@@ -450,6 +462,7 @@ const VariationOrder: React.FC = () => {
         layout="vertical"
         initialValues={data}
         onValuesChange={(_, allValues) => {
+          if (isClearingRef.current) return
           setData((prev) => {
             const next: VariationOrderData = {
               ...prev,
@@ -533,6 +546,7 @@ const VariationOrder: React.FC = () => {
               ref={installerSigRef}
               initialValue={data.installerSignature}
               onChange={(dataUrl) => {
+                if (isClearingRef.current) return
                 // Save immediately on signature change (no debounce to avoid losing strokes)
                 const next: VariationOrderData = { ...data, installerSignature: dataUrl }
                 saveVariationOrder({ ...next, customerSignature: customerSigRef.current?.getValue() ?? data.customerSignature })
@@ -549,6 +563,7 @@ const VariationOrder: React.FC = () => {
               ref={customerSigRef}
               initialValue={data.customerSignature}
               onChange={(dataUrl) => {
+                if (isClearingRef.current) return
                 const next: VariationOrderData = { ...data, customerSignature: dataUrl }
                 saveVariationOrder({ ...next, installerSignature: installerSigRef.current?.getValue() ?? data.installerSignature })
               }}

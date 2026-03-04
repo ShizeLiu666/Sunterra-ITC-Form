@@ -61,7 +61,7 @@ export function createEmptyVariationOrder(): VariationOrderData {
     jobNumber: '',
     installationAddress: '',
     date: today,
-    workItems: [],
+    workItems: [createEmptyWorkItem()],
     installerSignature: '',
     customerSignature: '',
     signatureDate: today,
