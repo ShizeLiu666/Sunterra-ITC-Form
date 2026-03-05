@@ -10,6 +10,7 @@ import {
   formatCurrency,
 } from '../shared/variationOrderData'
 import type { VariationOrderData } from '../shared/variationOrderData'
+import { trackEvent } from '../utils/tracking'
 import './Preview.css'
 import './VariationOrderPreview.css'
 
@@ -63,6 +64,12 @@ const VariationOrderPreview: React.FC = () => {
     if (!data) navigate('/variation-order', { replace: true })
   }, [data, navigate])
 
+  // Track preview page view once on mount (only when data is present)
+  useEffect(() => {
+    if (data) trackEvent('preview_click', 'variation-order')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   /* ----------------------------------------------------------------
      Filename helper — VO_JobNumber_YYYYMMDD_HHmmss
   ---------------------------------------------------------------- */
@@ -81,6 +88,7 @@ const VariationOrderPreview: React.FC = () => {
     const el = printRef.current
     if (!el) return
 
+    trackEvent('pdf_export', 'variation-order')
     setPdfLoading(true)
 
     const originalStyle = el.getAttribute('style') || ''
@@ -132,6 +140,7 @@ const VariationOrderPreview: React.FC = () => {
     const el = printRef.current
     if (!el) return
 
+    trackEvent('image_export', 'variation-order')
     setImageLoading(true)
 
     const originalStyle = el.getAttribute('style') || ''

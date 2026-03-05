@@ -12,6 +12,7 @@ import {
   INSPECTION_TEST_ITEMS,
   TEST_RESULTS_ROWS,
 } from '../shared/formData'
+import { trackEvent } from '../utils/tracking'
 import './Preview.css'
 
 /* ================================================================
@@ -116,6 +117,12 @@ const Preview: React.FC = () => {
     if (!data) navigate('/itr', { replace: true })
   }, [data, navigate])
 
+  // Track preview page view once on mount (only when data is present)
+  useEffect(() => {
+    if (data) trackEvent('preview_click', 'itr')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   /* ---- PDF generation ---- */
   const handleDownloadPdf = async () => {
     const el = previewRef.current
@@ -180,6 +187,7 @@ const Preview: React.FC = () => {
     const el = previewRef.current
     if (!el) return
 
+    trackEvent('image_export', 'itr')
     setImageLoading(true)
 
     const originalStyle = el.getAttribute('style') || ''
